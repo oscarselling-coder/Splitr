@@ -1,0 +1,1737 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Splitr — Oscar & Annakarin</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0d0d0f;--bg2:#141416;--bg3:#1c1c20;--bg4:#242428;
+  --bd:rgba(255,255,255,0.07);--bd2:rgba(255,255,255,0.12);--bd3:rgba(255,255,255,0.20);
+  --tx:#f0f0f2;--tx2:#8a8a94;--tx3:#4a4a54;
+  --gem:#34d399;--gem-bg:rgba(52,211,153,0.10);--gem-bd:rgba(52,211,153,0.28);
+  --osc:#60a5fa;--osc-bg:rgba(96,165,250,0.10);--osc-bd:rgba(96,165,250,0.28);
+  --ak:#f472b6;--ak-bg:rgba(244,114,182,0.10);--ak-bd:rgba(244,114,182,0.28);
+  --oo:#fb923c;--oo-bg:rgba(251,146,60,0.10);--oo-bd:rgba(251,146,60,0.28);
+  --ao:#a78bfa;--ao-bg:rgba(167,139,250,0.10);--ao-bd:rgba(167,139,250,0.28);
+  --r:12px;--rs:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;font-size:14px;line-height:1.5;}
+.shell{display:flex;min-height:100vh;}
+.sidebar{width:224px;background:var(--bg2);border-right:1px solid var(--bd);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:10;overflow-y:auto;}
+.content{margin-left:224px;flex:1;padding:32px 36px;max-width:1600px;}
+.logo{padding:22px 20px 18px;border-bottom:1px solid var(--bd);}
+.logo-name{font-size:16px;font-weight:600;letter-spacing:-.02em;}
+.logo-sub{font-size:11px;color:var(--tx3);margin-top:2px;font-family:'DM Mono',monospace;}
+.month-wrap{padding:13px 20px;border-bottom:1px solid var(--bd);}
+.fl{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--tx3);font-weight:600;display:block;margin-bottom:5px;}
+.nav{padding:10px 10px;}
+.nav-section{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--tx3);font-weight:600;padding:12px 12px 6px;}
+.ni{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:var(--rs);cursor:pointer;color:var(--tx2);font-size:13px;font-weight:400;transition:all .15s;border:none;background:transparent;width:100%;text-align:left;}
+.ni svg{width:16px;height:16px;stroke-width:1.8;flex-shrink:0;}
+.ni:hover{color:var(--tx);background:var(--bg3);}
+.ni.active{color:var(--tx);background:var(--bg4);font-weight:500;}
+.nbadge{margin-left:auto;background:rgba(251,146,60,.2);color:var(--oo);font-size:10px;font-weight:600;padding:1px 7px;border-radius:99px;font-family:'DM Mono',monospace;}
+.sidebar-footer{padding:14px 20px;border-top:1px solid var(--bd);display:flex;flex-direction:column;gap:7px;margin-top:auto;}
+.page{display:none;}.page.active{display:block;}
+.ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;}
+.pt{font-size:22px;font-weight:600;letter-spacing:-.03em;}
+.ps{font-size:13px;color:var(--tx2);margin-top:3px;}
+.card{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);padding:20px 22px;}
+.field{display:flex;flex-direction:column;gap:5px;}
+input[type=text],input[type=number],input[type=date],input[type=month],select{background:var(--bg3);border:1px solid var(--bd2);border-radius:var(--rs);color:var(--tx);padding:8px 11px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .15s;width:100%;}
+input:focus,select:focus{border-color:var(--bd3);}
+select option{background:var(--bg3);}
+input[type=month]::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:pointer;}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:var(--rs);border:1px solid var(--bd2);background:transparent;color:var(--tx2);font-size:13px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.btn svg{width:14px;height:14px;flex-shrink:0;}
+.btn:hover{color:var(--tx);border-color:var(--bd3);background:var(--bg3);}
+.btn-p{background:var(--tx);color:var(--bg);border-color:var(--tx);}
+.btn-p:hover{background:rgba(240,240,242,.88);color:var(--bg);}
+.btn-sm{padding:5px 12px;font-size:12px;}
+.btn-gem{background:var(--gem-bg);color:var(--gem);border-color:var(--gem-bd);}
+.btn-gem:hover{background:rgba(52,211,153,.18);color:var(--gem);}
+.dz{border:1.5px dashed var(--bd2);border-radius:var(--rs);padding:28px 16px;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg3);}
+.dz:hover,.dz.over{border-color:var(--gem);background:var(--gem-bg);}
+.dz-ico{width:40px;height:40px;background:var(--bg4);border-radius:10px;display:flex;align-items:center;justify-content:center;margin:0 auto 11px;}
+.dz-ico svg{width:20px;height:20px;color:var(--tx2);}
+.dz h4{font-size:13px;font-weight:500;margin-bottom:3px;}
+.dz p{font-size:12px;color:var(--tx3);}
+.dz input[type=file]{display:none;}
+.ig{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.mapper{background:var(--bg3);border:1px solid var(--bd2);border-radius:var(--rs);padding:16px;margin-top:14px;display:none;}
+.mg{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:12px;}
+.skip-info{background:rgba(52,211,153,.07);border:1px solid var(--gem-bd);border-radius:var(--rs);padding:10px 14px;margin-top:10px;font-size:12px;color:var(--gem);display:none;align-items:center;gap:8px;}
+.skip-info svg{width:14px;height:14px;flex-shrink:0;}
+.txw{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden;}
+.txh,.txr{display:grid;gap:0;padding:10px 14px;align-items:center;}
+.txh{background:var(--bg3);border-bottom:1px solid var(--bd);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--tx3);font-weight:600;}
+.txr{border-bottom:1px solid var(--bd);transition:background .1s;font-size:13px;}
+.txr:last-child{border-bottom:none;}
+.txr:hover{background:var(--bg3);}
+.txr.manual{border-left:2px solid var(--oo);}
+/* split columns — with budget col */
+/* split columns defined below in NEW section */
+.txdate{font-family:'DM Mono',monospace;font-size:12px;color:var(--tx3);}
+.txname{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:6px;}
+.txamt{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;text-align:left;}
+.txcard{font-size:12px;color:var(--tx2);}
+.txbud{font-size:12px;}
+.pills{display:flex;gap:3px;flex-wrap:wrap;}
+.pill{padding:3px 9px;border-radius:99px;font-size:11px;font-weight:500;cursor:pointer;border:1px solid var(--bd2);background:transparent;color:var(--tx3);font-family:'DM Sans',sans-serif;transition:all .12s;white-space:nowrap;}
+.pill:hover{border-color:var(--bd3);color:var(--tx2);}
+.pill.pg{background:var(--gem-bg);color:var(--gem);border-color:var(--gem-bd);}
+.pill.po{background:var(--osc-bg);color:var(--osc);border-color:var(--osc-bd);}
+.pill.pa{background:var(--ak-bg);color:var(--ak);border-color:var(--ak-bd);}
+.pill.poo{background:var(--oo-bg);color:var(--oo);border-color:var(--oo-bd);}
+.pill.pao{background:var(--ao-bg);color:var(--ao);border-color:var(--ao-bd);}
+.bpill{padding:3px 8px;border-radius:99px;font-size:11px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .12s;white-space:nowrap;border:1px solid var(--bd2);background:transparent;color:var(--tx3);}
+.bpill:hover{border-color:var(--bd3);color:var(--tx2);}
+.bpill.active{color:#fff;}
+.del{width:28px;height:28px;border-radius:6px;background:transparent;border:1px solid transparent;color:var(--tx3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.del svg{width:13px;height:13px;}
+.del:hover{background:rgba(239,68,68,.12);color:#ef4444;border-color:rgba(239,68,68,.25);}
+.fbar{display:flex;gap:4px;flex-wrap:wrap;}
+.fp{padding:5px 13px;border-radius:99px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--bd2);background:transparent;color:var(--tx2);font-family:'DM Sans',sans-serif;transition:all .12s;}
+.fp:hover{border-color:var(--bd3);color:var(--tx);}
+.fp.active{background:var(--bg4);color:var(--tx);border-color:var(--bd3);}
+.hero{border-radius:var(--r);padding:24px 28px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;}
+.hero.hak{background:linear-gradient(135deg,#081a0f 0%,#081220 100%);border:1px solid var(--gem-bd);}
+.hero.hosc{background:linear-gradient(135deg,#160820 0%,#100818 100%);border:1px solid var(--ao-bd);}
+.hero.heven{background:var(--bg2);border:1px solid var(--bd);}
+.hlbl{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--tx3);margin-bottom:5px;}
+.hamt{font-size:40px;font-weight:300;letter-spacing:-.04em;}
+.hamt.green{color:var(--gem);}
+.hamt.purple{color:var(--ao);}
+.hdet{font-size:12px;color:var(--tx2);margin-top:4px;}
+.sgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px;}
+.sc{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--rs);padding:13px 14px;position:relative;overflow:hidden;}
+.sc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.sc.gem::before{background:var(--gem);}
+.sc.osc::before{background:var(--osc);}
+.sc.ak::before{background:var(--ak);}
+.sc.oo::before{background:var(--oo);}
+.sc.ao::before{background:var(--ao);}
+.sclbl{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--tx3);font-weight:600;margin-bottom:6px;}
+.scamt{font-size:17px;font-weight:600;letter-spacing:-.02em;font-family:'DM Mono',monospace;}
+.scsub{font-size:11px;color:var(--tx3);margin-top:3px;}
+.cbox{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);padding:18px 22px;margin-bottom:16px;}
+.crow{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--bd);font-size:13px;}
+.crow:last-child{border-bottom:none;}
+.crow.tot{font-weight:600;font-size:14px;padding-top:11px;margin-top:3px;border-top:1px solid var(--bd2);}
+.crl{color:var(--tx2);display:flex;align-items:center;gap:8px;}
+.crdot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.crr{font-family:'DM Mono',monospace;font-size:13px;}
+.crow.minus .crr{color:#ef4444;}
+.crow.tot .crr{font-size:15px;}
+.crow.tot.green .crr{color:var(--gem);}
+.crow.tot.purple .crr{color:var(--ao);}
+.bds{margin-bottom:14px;}
+.bdl{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--tx3);font-weight:600;margin-bottom:7px;display:flex;justify-content:space-between;align-items:center;}
+.bdl span{font-size:12px;font-family:'DM Mono',monospace;color:var(--tx2);text-transform:none;letter-spacing:0;}
+.hi{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);padding:15px 20px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:border-color .15s;}
+.hi:hover{border-color:var(--bd3);}
+.toast{position:fixed;bottom:22px;right:22px;background:var(--bg4);border:1px solid var(--bd2);border-radius:var(--rs);padding:11px 18px;font-size:13px;z-index:100;opacity:0;transform:translateY(6px);transition:all .22s;pointer-events:none;}
+.toast.show{opacity:1;transform:translateY(0);}
+.warn{background:rgba(251,146,60,.07);border:1px solid rgba(251,146,60,.2);border-radius:var(--rs);padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--oo);display:flex;align-items:center;gap:8px;}
+.warn svg{width:15px;height:15px;flex-shrink:0;}
+.empty{text-align:center;padding:54px 20px;color:var(--tx3);}
+.ei{width:46px;height:46px;background:var(--bg3);border-radius:11px;display:flex;align-items:center;justify-content:center;margin:0 auto 13px;}
+.ei svg{width:22px;height:22px;}
+.toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:13px;gap:10px;flex-wrap:wrap;}
+.slbl{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--tx3);font-weight:600;margin-bottom:10px;}
+.tagm{font-size:10px;background:var(--oo-bg);color:var(--oo);padding:1px 7px;border-radius:99px;font-weight:500;}
+
+/* BUDGET PAGE */
+.budget-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:24px;}
+.bcat-card{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);padding:16px 18px;position:relative;overflow:hidden;}
+.bcat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.bcat-name{font-size:13px;font-weight:500;margin-bottom:3px;}
+.bcat-spent{font-size:20px;font-weight:600;font-family:'DM Mono',monospace;letter-spacing:-.02em;margin-bottom:4px;}
+.bcat-budget{font-size:11px;color:var(--tx3);}
+.bcat-bar-bg{height:3px;background:var(--bg4);border-radius:99px;margin-top:10px;overflow:hidden;}
+.bcat-bar{height:3px;border-radius:99px;transition:width .4s;}
+.bcat-over{font-size:11px;color:#ef4444;margin-top:4px;}
+.budget-setup{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;margin-bottom:20px;}
+.brow{display:flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid var(--bd);border-radius:var(--rs);padding:10px 14px;}
+.brow-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.brow-name{font-size:13px;flex:1;}
+.brow input{width:110px;flex-shrink:0;}
+.month-tabs{display:flex;gap:2px;margin-bottom:20px;background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);padding:4px;width:fit-content;}
+.mtab{padding:6px 16px;border-radius:var(--rs);font-size:13px;cursor:pointer;color:var(--tx2);border:none;background:transparent;transition:all .15s;font-family:'DM Sans',sans-serif;}
+.mtab.active{background:var(--bg4);color:var(--tx);}
+.trend-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px;margin-bottom:20px;}
+.trend-card{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);padding:16px 18px;}
+.trend-bars{display:flex;align-items:flex-end;gap:4px;height:60px;margin-top:12px;}
+.tbar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.tbar{width:100%;border-radius:3px 3px 0 0;min-height:2px;transition:height .3s;}
+.tbar-lbl{font-size:9px;color:var(--tx3);font-family:'DM Mono',monospace;}
+
+/* NEW: search, bulk, comment, swish */
+.search-bar{display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--bd2);border-radius:var(--rs);padding:7px 12px;margin-bottom:12px;}
+.search-bar input{background:transparent;border:none;color:var(--tx);font-size:13px;flex:1;outline:none;font-family:'DM Sans',sans-serif;}
+.search-bar svg{width:14px;height:14px;color:var(--tx3);flex-shrink:0;}
+.bulk-bar{display:flex;align-items:center;gap:8px;background:var(--bg4);border:1px solid var(--bd2);border-radius:var(--rs);padding:8px 14px;margin-bottom:10px;font-size:13px;}
+.bulk-bar select{width:auto;padding:5px 8px;font-size:12px;}
+.chk{width:16px;height:16px;accent-color:var(--gem);cursor:pointer;flex-shrink:0;}
+.txr.selected{background:rgba(52,211,153,0.06);}
+.comment-btn{padding:3px 8px;border-radius:6px;font-size:11px;border:1px solid var(--bd2);background:transparent;color:var(--tx3);cursor:pointer;transition:all .15s;white-space:nowrap;}
+.comment-btn:hover{border-color:var(--bd3);color:var(--tx2);}
+.comment-btn.has-comment{background:rgba(96,165,250,0.1);color:var(--osc);border-color:var(--osc-bd);}
+.comment-inp{background:var(--bg3);border:1px solid var(--bd2);border-radius:6px;color:var(--tx);font-size:12px;padding:4px 8px;font-family:'DM Sans',sans-serif;outline:none;width:100%;}
+.comment-inp:focus{border-color:var(--bd3);}
+.suggestion-chip{display:inline-flex;align-items:center;gap:4px;background:rgba(167,139,250,0.12);border:1px solid var(--ao-bd);color:var(--ao);border-radius:99px;font-size:11px;padding:2px 9px;cursor:pointer;transition:all .12s;}
+.suggestion-chip:hover{background:rgba(167,139,250,0.22);}
+.col-map-saved{background:rgba(52,211,153,0.07);border:1px solid var(--gem-bd);border-radius:var(--rs);padding:9px 13px;font-size:12px;color:var(--gem);display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.credit-tag{font-size:10px;background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.25);padding:1px 7px;border-radius:99px;font-weight:500;}
+/* with-bud updated to include checkbox + comment */
+/* Resizable columns via CSS variables */
+:root {
+  --col-chk:20px; --col-date:100px; --col-name:1fr;
+  --col-amt:140px; --col-card:140px; --col-bud:190px;
+  --col-cat:230px; --col-note:28px; --col-del:28px;
+}
+.with-bud{grid-template-columns:var(--col-chk) var(--col-date) var(--col-name) var(--col-amt) var(--col-card) var(--col-bud) var(--col-cat) var(--col-note) var(--col-del);}
+.no-bud{grid-template-columns:90px 1fr 100px 120px;}
+
+/* Resize handle */
+.col-resize-handle{width:4px;cursor:col-resize;background:transparent;border-right:1px solid var(--bd2);position:relative;user-select:none;flex-shrink:0;}
+.col-resize-handle:hover,.col-resize-handle.dragging{background:var(--gem);border-color:var(--gem);}
+.txh-cell{display:flex;align-items:center;overflow:hidden;position:relative;}
+.txh-cell-label{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+/* Col widths panel */
+.col-panel{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);padding:16px 20px;margin-bottom:14px;}
+.col-panel-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;}
+.col-slider-wrap{display:flex;flex-direction:column;gap:4px;}
+.col-slider-wrap label{font-size:11px;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;font-weight:600;}
+.col-slider-wrap input[type=range]{width:100%;accent-color:var(--gem);}
+.col-slider-wrap span{font-size:11px;color:var(--tx2);font-family:'DM Mono',monospace;}
+/* swish modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:flex;align-items:center;justify-content:center;}
+.modal{background:var(--bg2);border:1px solid var(--bd2);border-radius:var(--r);padding:28px 32px;max-width:480px;width:90%;}
+.modal h2{font-size:17px;font-weight:600;margin-bottom:16px;}
+.swish-msg{background:var(--bg3);border:1px solid var(--bd2);border-radius:var(--rs);padding:14px 16px;font-size:14px;line-height:1.7;margin-bottom:16px;white-space:pre-wrap;font-family:'DM Mono',monospace;}
+</style>
+</head>
+<body>
+<div class="shell">
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-name">Splitr</div>
+    <div class="logo-sub">Oscar & Annakarin</div>
+  </div>
+  <div class="month-wrap">
+    <label class="fl">Månad</label>
+    <input type="month" id="monthPicker">
+  </div>
+  <nav class="nav">
+    <div class="nav-section">Utlägg</div>
+    <button class="ni active" onclick="goto('import')" id="ni-import">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
+      Importera
+    </button>
+    <button class="ni" onclick="goto('kat')" id="ni-kat">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>
+      Kategorisera
+      <span class="nbadge" id="nbadge" style="display:none">0</span>
+    </button>
+    <button class="ni" onclick="goto('sum')" id="ni-sum">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/></svg>
+      Sammanställning
+    </button>
+    <button class="ni" onclick="goto('hist')" id="ni-hist">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      Historik
+    </button>
+    <div class="nav-section">Budget</div>
+    <button class="ni" onclick="goto('budget')" id="ni-budget">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941"/></svg>
+      Översikt
+    </button>
+    <button class="ni" onclick="goto('bsetup')" id="ni-bsetup">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      Budgetinst.
+    </button>
+    <button class="ni" onclick="goto('ar')" id="ni-ar">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 9v7.5m-9-6h.008v.008H12V13.5zm0 3h.008v.008H12v-.008zm-3 0h.008v.008H9v-.008zm6 0h.008v.008H15v-.008z"/></svg>
+      Helårsvy
+    </button>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="slbl" style="margin-bottom:2px;">Data</div>
+    <button class="btn btn-sm" style="width:100%;justify-content:center;" onclick="exportJSON()">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
+      Exportera JSON
+    </button>
+    <button class="btn btn-sm" style="width:100%;justify-content:center;" onclick="document.getElementById('jsonImport').click()">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9"/></svg>
+      Ladda JSON
+    </button>
+    <input type="file" id="jsonImport" accept=".json" style="display:none" onchange="importJSON(event)">
+  </div>
+</aside>
+
+<main class="content">
+
+<!-- IMPORTERA -->
+<div class="page active" id="page-import">
+  <div class="ph"><div><div class="pt">Importera</div><div class="ps">Läs in Amex-fil eller lägg till manuellt</div></div></div>
+  <div class="ig">
+    <div class="card">
+      <div class="slbl">Amex Excel / CSV</div>
+      <div class="dz" id="dz" onclick="document.getElementById('fi').click()">
+        <div class="dz-ico"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg></div>
+        <h4>Dra hit eller klicka</h4><p>.xlsx, .xls eller .csv</p>
+        <input type="file" id="fi" accept=".xlsx,.xls,.csv">
+      </div>
+      <p id="ist" style="font-size:12px;color:var(--tx3);margin-top:9px;text-align:center;min-height:16px;"></p>
+      <div class="skip-info" id="skipInfo">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span id="skipText"></span>
+      </div>
+      <div class="mapper" id="mapper">
+        <div class="slbl" style="margin-bottom:10px;">Matcha kolumner</div>
+        <div class="col-map-saved" id="colMapSavedNotice" style="display:none;">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:14px;height:14px;flex-shrink:0"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          Kolumner förvalda från senaste import
+        </div>
+        <div class="mg">
+          <div class="field"><label class="fl">Datum</label><select id="cDate"></select></div>
+          <div class="field"><label class="fl">Butik / beskrivning</label><select id="cMerch"></select></div>
+          <div class="field"><label class="fl">Belopp</label><select id="cAmt"></select></div>
+          <div class="field"><label class="fl">Kortinnehavare</label><select id="cCard"></select></div>
+        </div>
+        <button class="btn btn-p" style="width:100%;justify-content:center;" onclick="confirmImport()">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.5 12.75l6 6 9-13.5"/></svg>
+          Importera transaktioner
+        </button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="slbl">Lägg till manuellt</div>
+      <p style="font-size:12px;color:var(--tx2);margin-bottom:13px;">Utlägg på andra kort eller kontant</p>
+      <div style="display:grid;gap:10px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label class="fl">Datum</label><input type="date" id="mDate"></div>
+          <div class="field"><label class="fl">Belopp (kr)</label><input type="number" id="mAmt" placeholder="0" min="0" step="0.01"></div>
+        </div>
+        <div class="field"><label class="fl">Butik / beskrivning</label><input type="text" id="mMerch" placeholder="t.ex. Coop, Restaurang…"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label class="fl">Betalt av</label>
+            <select id="mPayer"><option value="Oscar">Oscar</option><option value="Annakarin">Annakarin</option><option value="Kontant">Kontant</option><option value="Annat kort">Annat kort</option></select>
+          </div>
+          <div class="field"><label class="fl">Delningskategori</label>
+            <select id="mCat">
+              <option value="gemensam">Gemensam</option>
+              <option value="oscar">Oscar — privat</option>
+              <option value="ak">Annakarin — privat</option>
+              <option value="oscar-out">Oscar la ut (gem)</option>
+              <option value="ak-out">AK la ut (gem)</option>
+            </select>
+          </div>
+        </div>
+        <div class="field"><label class="fl">Budgetkategori</label>
+          <select id="mBud"><option value="">— välj —</option></select>
+        </div>
+        <button class="btn btn-p" onclick="addManual()" style="justify-content:center;">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+          Lägg till rad
+        </button>
+      </div>
+    </div>
+  </div>
+
+<!-- Learned categories panel -->
+<div id="learnedPanel" style="display:none;margin-top:8px;" class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+    <div>
+      <div class="slbl" style="margin-bottom:2px;">Inlärda budgetkategorier</div>
+      <div style="font-size:12px;color:var(--tx2)">Appen minns dessa kopplingarna och föreslår dem automatiskt vid import</div>
+    </div>
+    <button class="btn btn-sm" onclick="clearLearned()">Rensa allt</button>
+  </div>
+  <div id="learnedList"></div>
+</div>
+<button class="btn btn-sm" id="learnedToggle" style="margin-top:8px;display:none;" onclick="toggleLearnedPanel()">Visa inlärda kategorier (<span id="learnedCount">0</span>)</button>
+</div>
+
+<!-- KATEGORISERA -->
+<div class="page" id="page-kat">
+  <div class="ph">
+    <div><div class="pt">Kategorisera</div><div class="ps" id="katSub"></div></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-sm btn-gem" onclick="setAllCat('gemensam')">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.5 12.75l6 6 9-13.5"/></svg>
+        Alla synliga → Gemensam
+      </button>
+      <button class="btn btn-sm" onclick="showSwish()">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z"/></svg>
+        Swish-sammanfattning
+      </button>
+      <button class="btn btn-p btn-sm" onclick="goto('sum')">Sammanställning →</button>
+    </div>
+  </div>
+  <!-- Column width panel (collapsed by default) -->
+  <div id="colPanel" class="col-panel" style="display:none;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div class="slbl" style="margin-bottom:0">Kolumnbredder</div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-sm" onclick="resetColWidths()">Återställ</button>
+        <button class="btn btn-sm" onclick="toggleColPanel()">Stäng</button>
+      </div>
+    </div>
+    <div class="col-panel-grid" id="colSliders"></div>
+  </div>
+  <div style="display:flex;justify-content:flex-end;margin-bottom:6px;">
+    <button class="btn btn-sm" onclick="toggleColPanel()" id="colPanelBtn">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 4.5v15m6-15v15M3 9h1.5m0 0a1.5 1.5 0 003 0m-3 0a1.5 1.5 0 113 0m0 0H9m6 0h1.5m-1.5 0a1.5 1.5 0 003 0m-3 0a1.5 1.5 0 113 0m0 0H21"/></svg>
+      Kolumnbredder
+    </button>
+  </div>
+  <!-- Search -->
+  <div class="search-bar">
+    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+    <input type="text" id="txSearch" placeholder="Sök butik, belopp…" oninput="renderList()">
+    <span id="searchCount" style="font-size:11px;color:var(--tx3);white-space:nowrap;"></span>
+  </div>
+  <!-- Bulk actions bar -->
+  <div class="bulk-bar" id="bulkBar" style="display:none;">
+    <span id="bulkCount" style="color:var(--tx2);font-size:13px;"></span>
+    <span style="color:var(--tx3);margin:0 4px;">→</span>
+    <span style="font-size:12px;color:var(--tx2);">Delning:</span>
+    <select id="bulkCatSel" style="width:130px;">
+      <option value="">— välj —</option>
+      <option value="gemensam">Gemensam</option>
+      <option value="oscar">Oscar privat</option>
+      <option value="ak">AK privat</option>
+      <option value="oscar-out">Oscar la ut</option>
+      <option value="ak-out">AK la ut</option>
+    </select>
+    <span style="font-size:12px;color:var(--tx2);">Budget:</span>
+    <select id="bulkBudSel" style="width:150px;"><option value="">— välj —</option></select>
+    <button class="btn btn-sm btn-gem" onclick="applyBulk()">Tillämpa</button>
+    <button class="btn btn-sm" onclick="clearSelection()" style="margin-left:auto;">Avmarkera allt</button>
+  </div>
+  <div class="toolbar">
+    <div class="fbar">
+      <button class="fp active" onclick="setFilter('alla')" id="fp-alla">Alla</button>
+      <button class="fp" onclick="setFilter('ingen')" id="fp-ingen">Okategoriserade</button>
+      <button class="fp" onclick="setFilter('gemensam')" id="fp-gemensam">Gemensam</button>
+      <button class="fp" onclick="setFilter('oscar')" id="fp-oscar">Oscar privat</button>
+      <button class="fp" onclick="setFilter('ak')" id="fp-ak">AK privat</button>
+      <button class="fp" onclick="setFilter('oscar-out')" id="fp-oscar-out">Oscar la ut</button>
+      <button class="fp" onclick="setFilter('ak-out')" id="fp-ak-out">AK la ut</button>
+    </div>
+  </div>
+  <div id="txList">
+    <div class="empty"><div class="ei"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15"/></svg></div>Importera transaktioner för att börja</div>
+  </div>
+</div>
+
+<!-- SAMMANSTÄLLNING -->
+<div class="page" id="page-sum">
+  <div class="ph">
+    <div><div class="pt">Sammanställning</div><div class="ps" id="sumSub"></div></div>
+    <button class="btn" onclick="saveMonth()">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z"/></svg>
+      Spara månad
+    </button>
+  </div>
+  <div id="sumContent"><div class="empty"><div class="ei"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25"/></svg></div>Kategorisera poster för att se sammanställningen</div></div>
+</div>
+
+<!-- HISTORIK -->
+<div class="page" id="page-hist">
+  <div class="ph"><div class="pt">Historik</div></div>
+  <div id="histList"><div class="empty"><div class="ei"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>Ingen historik sparad ännu</div></div>
+</div>
+
+<!-- BUDGET ÖVERSIKT -->
+<div class="page" id="page-budget">
+  <div class="ph">
+    <div><div class="pt">Budget</div><div class="ps" id="budSub"></div></div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <div class="month-tabs" id="budMonthTabs"></div>
+    </div>
+  </div>
+  <div id="budContent"><div class="empty"><div class="ei"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941"/></svg></div>Kategorisera transaktioner med budgetkategorier för att se översikten</div></div>
+</div>
+
+<!-- BUDGET INSTÄLLNINGAR -->
+<div class="page" id="page-bsetup">
+  <div class="ph">
+    <div><div class="pt">Budgetinställningar</div><div class="ps">Sätt månatliga budgettak per kategori</div></div>
+    <button class="btn btn-p" onclick="saveBudgetSettings()">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.5 12.75l6 6 9-13.5"/></svg>
+      Spara inställningar
+    </button>
+  </div>
+  <div id="bsetupContent"></div>
+</div>
+
+<!-- HELÅRSVY -->
+<div class="page" id="page-ar">
+  <div class="ph">
+    <div><div class="pt">Helårsvy</div><div class="ps" id="arSub">Budget &amp; utlägg per år</div></div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <div class="month-tabs" id="arYearTabs"></div>
+    </div>
+  </div>
+  <div id="arContent"><div class="empty"><div class="ei"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5"/></svg></div>Spara månader för att se helårsvyn</div></div>
+</div>
+
+<!-- SWISH MODAL -->
+<div class="modal-bg" id="swishModal" style="display:none;" onclick="if(event.target===this)closeSwish()">
+  <div class="modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h2 style="margin:0">💸 Swish-sammanfattning</h2>
+      <button class="btn btn-sm" onclick="closeSwish()">Stäng</button>
+    </div>
+    <div class="swish-msg" id="swishMsg"></div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-p" onclick="copySwish()" style="flex:1;justify-content:center;">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184"/></svg>
+        Kopiera
+      </button>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ── STATE ──
+let TX = [];
+let rawH = [], rawR = [];
+let filter = 'alla';
+let saved = {};
+let budgets = {}; // { categoryKey: amountPerMonth }
+
+// NEW state
+let selectedIds = new Set();  // bulk selection
+let colMap = {};               // saved column mapping: {date,merch,amt,card}
+let learnedCats = {};          // merchant->bud learned from past categorizations: {merchantKey: budKey}
+
+// Hierarchical budget categories
+// Each group has a parent and subcategories
+const BUD_GROUPS = [
+  { k:'mat',   l:'Mat',         color:'#34d399', icon:'🛒',
+    subs:[{k:'mat.daglig',l:'Dagligvaror'},{k:'mat.hallen',l:'Saluhall/delikatess'},{k:'mat.online',l:'Matkasse/online'}] },
+  { k:'ute',   l:'Ute & nöje',  color:'#f472b6', icon:'🍽️',
+    subs:[{k:'ute.restaurang',l:'Restaurang'},{k:'ute.bar',l:'Bar & pub'},{k:'ute.cafe',l:'Café & fika'},{k:'ute.noje',l:'Bio, konserter, aktiviteter'}] },
+  { k:'trans', l:'Transport',   color:'#fb923c', icon:'🚆',
+    subs:[{k:'trans.sl',l:'Kollektivtrafik'},{k:'trans.taxi',l:'Taxi & samåkning'},{k:'trans.bil',l:'Bil & parkering'},{k:'trans.flyg',l:'Flyg & resor'}] },
+  { k:'halsa', l:'Hälsa',       color:'#a78bfa', icon:'💊',
+    subs:[{k:'halsa.apotek',l:'Apotek & medicin'},{k:'halsa.skönhet',l:'Skönhet & hygien'},{k:'halsa.träning',l:'Träning & sport'}] },
+  { k:'hem',   l:'Hem',         color:'#fbbf24', icon:'🏠',
+    subs:[{k:'hem.hushall',l:'Hushåll & städ'},{k:'hem.inredning',l:'Inredning & möbler'},{k:'hem.el',l:'El & teknik'}] },
+  { k:'hyra',  l:'Boende & hyra', color:'#e879f9', icon:'🔑',
+    subs:[{k:'hyra.hyra',l:'Hyra'},{k:'hyra.el',l:'El & värme'},{k:'hyra.forsakring',l:'Hemförsäkring'},{k:'hyra.ovrigt',l:'Övrigt boende'}] },
+  { k:'klader',l:'Kläder',      color:'#f87171', icon:'👗',
+    subs:[{k:'klader.klader',l:'Kläder'},{k:'klader.skor',l:'Skor'},{k:'klader.accessoarer',l:'Accessoarer'}] },
+  { k:'pren',  l:'Prenumerationer', color:'#38bdf8', icon:'📱',
+    subs:[{k:'pren.streaming',l:'Streaming & media'},{k:'pren.appar',l:'Appar & spel'},{k:'pren.tidning',l:'Tidningar & tjänster'}] },
+  { k:'resor', l:'Resor',        color:'#4ade80', icon:'✈️',
+    subs:[{k:'resor.hotell',l:'Hotell & boende'},{k:'resor.aktivitet',l:'Aktiviteter & upplevelser'}] },
+  { k:'ovrigt',l:'Övrigt',       color:'#94a3b8', icon:'📦',
+    subs:[{k:'ovrigt.present',l:'Presenter & gåvor'},{k:'ovrigt.barn',l:'Barn & familj'},{k:'ovrigt.ovrigt',l:'Övrigt'}] },
+];
+
+// Flat list of all selectable leaf options (parent + subs)
+// Each group's parent itself is also selectable (as a catch-all)
+const BUD_CATS = BUD_GROUPS.flatMap(g => [
+  { k: g.k, l: g.l + ' (allmänt)', parent: g.k, parentLabel: g.l, color: g.color, isParent: true },
+  ...g.subs.map(s => ({...s, parent: g.k, parentLabel: g.l, color: g.color, isParent: false }))
+]);
+
+// Flat list used only for budget settings (one budget per parent group)
+const BUD_KEYS = BUD_GROUPS.map(g => g.k);
+
+// Default budgets (per parent group, shared total)
+const DEFAULT_BUDGETS = {
+  mat:8000, ute:3000, trans:1500, halsa:1500,
+  hem:2000, hyra:0, klader:1500, pren:500, resor:0, ovrigt:1000
+};
+
+// Per-person budget defaults (Oscar / Annakarin)
+const DEFAULT_BUDGETS_OSC = { mat:4000,ute:1500,trans:750,halsa:500,hem:1000,hyra:0,klader:800,pren:300,resor:0,ovrigt:500 };
+const DEFAULT_BUDGETS_AK  = { mat:4000,ute:1500,trans:750,halsa:500,hem:1000,hyra:0,klader:700,pren:200,resor:0,ovrigt:500 };
+
+// ── STORAGE ──
+// ── DATA MIGRATION ──
+// Maps old budget category keys to new ones across schema versions
+const BUD_MIGRATIONS = {
+  'mat.restaurang': 'ute.restaurang',  // moved from mat to ute
+  'restaurang':     'ute.restaurang',  // old flat key
+  'noje':           'ute.noje',        // old flat key
+};
+
+function migrateData() {
+  // Get all valid bud keys
+  const validKeys = new Set(BUD_CATS.map(b => b.k));
+
+  // Migrate a single bud key — returns corrected key or null
+  function migrateBudKey(bud) {
+    if (!bud) return bud;
+    if (validKeys.has(bud)) return bud;             // already valid
+    if (BUD_MIGRATIONS[bud]) return BUD_MIGRATIONS[bud]; // known migration
+    // Try matching on parent key (e.g. old flat 'mat' -> keep as 'mat' which is still valid)
+    if (validKeys.has(bud)) return bud;
+    // Try stripping prefix — 'old.sub' -> find matching sub label
+    const sub = bud.split('.').pop();
+    const match = BUD_CATS.find(b => b.k.endsWith('.'+sub) || b.l.toLowerCase().includes(sub));
+    if (match) return match.k;
+    return null; // can't map — clear it
+  }
+
+  // Migrate TX
+  TX.forEach(t => { t.bud = migrateBudKey(t.bud); });
+
+  // Migrate saved months
+  Object.values(saved).forEach(months => {
+    if (Array.isArray(months)) months.forEach(t => { t.bud = migrateBudKey(t.bud); });
+  });
+
+  // Migrate learnedCats values
+  Object.keys(learnedCats).forEach(mk => {
+    learnedCats[mk] = migrateBudKey(learnedCats[mk]);
+    if (!learnedCats[mk]) delete learnedCats[mk];
+  });
+
+  // Ensure all budget keys exist (including new 'hyra')
+  BUD_KEYS.forEach(k => {
+    if (budgets[k]        === undefined) budgets[k]        = DEFAULT_BUDGETS[k]      || 0;
+    if (budgets[k+'_osc'] === undefined) budgets[k+'_osc'] = DEFAULT_BUDGETS_OSC[k]  || 0;
+    if (budgets[k+'_ak']  === undefined) budgets[k+'_ak']  = DEFAULT_BUDGETS_AK[k]   || 0;
+  });
+}
+
+async function loadStorage() {
+  try {
+    const res = await window.storage.get('splitr_data');
+    if (res && res.value) {
+      const data = JSON.parse(res.value);
+      saved       = data.saved       || {};
+      TX          = data.tx          || [];
+      budgets     = data.budgets     || {};
+      colMap      = data.colMap      || {};
+      learnedCats = data.learnedCats || {};
+    }
+  } catch(e) {}
+  // Budget key defaults handled by migrateData()
+  migrateData();
+  badge(); updateKatSub(); renderList(); populateBudSelects(); renderBsetup(); updateLearnedPanel(); loadColWidths();
+}
+
+async function persistStorage() {
+  try {
+    await window.storage.set('splitr_data', JSON.stringify({ saved, tx: TX, budgets, colMap, learnedCats }));
+  } catch(e) {}
+}
+
+// ── HELPERS ──
+const mp  = document.getElementById('monthPicker');
+mp.addEventListener('change', () => { renderList(); badge(); updateKatSub(); });
+const gm  = () => mp.value;
+const mi  = () => TX.filter(t => t.month === gm());
+const kr  = n  => Math.round(n).toLocaleString('sv-SE') + ' kr';
+const fd  = s  => { if (!s) return '—'; const d = new Date(s); return isNaN(d) ? s : d.toLocaleDateString('sv-SE', {day:'2-digit', month:'short'}); };
+
+// Parse date strings from Amex and other sources into YYYY-MM-DD
+function parseAmexDate(raw) {
+  if (!raw) return '';
+  raw = raw.toString().trim();
+  // Already ISO: 2026-03-01
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  // MM/DD/YYYY (Amex standard)
+  const mdy = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (mdy) return `${mdy[3]}-${mdy[1].padStart(2,'0')}-${mdy[2].padStart(2,'0')}`;
+  // DD/MM/YYYY
+  const dmy = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (dmy && parseInt(dmy[1]) > 12) return `${dmy[3]}-${dmy[2].padStart(2,'0')}-${dmy[1].padStart(2,'0')}`;
+  // DD.MM.YYYY
+  const dmy2 = raw.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+  if (dmy2) return `${dmy2[3]}-${dmy2[2].padStart(2,'0')}-${dmy2[1].padStart(2,'0')}`;
+  // Excel serial number (number of days since 1900-01-01)
+  if (/^\d{5}$/.test(raw)) {
+    const d = new Date(Date.UTC(1899,11,30) + parseInt(raw)*86400000);
+    if (!isNaN(d)) return d.toISOString().slice(0,10);
+  }
+  // Last resort: let the browser try, but use UTC to avoid timezone shifts
+  const parts = raw.match(/(\d{4})[^\d](\d{1,2})[^\d](\d{1,2})/);
+  if (parts) return `${parts[1]}-${parts[2].padStart(2,'0')}-${parts[3].padStart(2,'0')}`;
+  return raw;
+}
+
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+// ── SKIP PATTERNS ──
+const SKIP_PATTERNS = [/betalning\s+mottagen/i,/payment\s+received/i,/ingående\s+saldo/i,/utgående\s+saldo/i,/föregående\s+saldo/i];
+const ANNUAL_FEE_PATTERN = /periodens\s+del\s+av\s+(å|a)rs(avgift|fee)/i;
+const shouldSkip = d => SKIP_PATTERNS.some(p => p.test(d));
+const isAnnualFee = d => ANNUAL_FEE_PATTERN.test(d) || /annual\s+fee/i.test(d);
+const skipReason = d => /betalning\s+mottagen|payment\s+received/i.test(d) ? 'inbetalning föregående månad' : 'exkluderad';
+
+// ── NAV ──
+function goto(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.ni').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.getElementById('ni-' + name).classList.add('active');
+  if (name === 'sum')    renderSum();
+  if (name === 'hist')   renderHist();
+  if (name === 'kat')    { renderList(); updateKatSub(); }
+  if (name === 'budget') renderBudget();
+  if (name === 'bsetup') renderBsetup();
+  if (name === 'ar')     renderAr();
+}
+
+function updateKatSub() {
+  const items = mi(), sub = document.getElementById('katSub');
+  if (!sub) return;
+  if (!items.length) { sub.textContent = ''; return; }
+  const uncat = items.filter(t => !t.cat).length;
+  sub.textContent = `${items.length} poster · ${uncat} okategoriserade`;
+}
+
+function populateBudSelects() {
+  const opts = '<option value="">— ingen —</option>' +
+    BUD_GROUPS.map(g =>
+      `<optgroup label="${g.icon} ${g.l}"><option value="${g.k}">${g.l} (allmänt)</option>${g.subs.map(s=>`<option value="${s.k}">${s.l}</option>`).join('')}</optgroup>`
+    ).join('');
+  document.getElementById('mBud').innerHTML = opts;
+  const bulkBud = document.getElementById('bulkBudSel');
+  if (bulkBud) bulkBud.innerHTML = opts;
+}
+
+// Lookup helpers
+const budParent = k => BUD_CATS.find(b=>b.k===k)?.parent || k;
+const budColor  = k => { const b = BUD_CATS.find(b=>b.k===k); if(b) return b.color; const g = BUD_GROUPS.find(g=>g.k===k); return g?g.color:'#94a3b8'; };
+const budLabel  = k => { const b = BUD_CATS.find(b=>b.k===k); if(b) return b.parentLabel+' / '+b.l; const g = BUD_GROUPS.find(g=>g.k===k); return g?g.l:k||'—'; };
+
+// ── FILE IMPORT ──
+const dz = document.getElementById('dz'), fi = document.getElementById('fi');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('over'); handleFile(e.dataTransfer.files[0]); });
+fi.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+
+function handleFile(file) {
+  const st = document.getElementById('ist'); st.textContent = 'Läser fil…';
+  const r = new FileReader();
+  r.onload = e => {
+    try {
+      if (file.name.toLowerCase().endsWith('.csv')) {
+        const lines = e.target.result.split('\n').filter(l => l.trim());
+        const sep = lines[0].includes(';') ? ';' : ',';
+        rawH = lines[0].split(sep).map(h => h.replace(/["\r]/g,'').trim());
+        rawR = lines.slice(1).map(l => l.split(sep).map(c => c.replace(/["\r]/g,'').trim()));
+      } else {
+        const wb = XLSX.read(e.target.result, {type:'binary'});
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json(ws, {header:1, raw:false});
+        let hi = 0;
+        for (let i = 0; i < Math.min(20, json.length); i++) {
+          if ((json[i]||[]).join(' ').toLowerCase().match(/datum|date/)) { hi = i; break; }
+        }
+        rawH = (json[hi]||[]).map(h => (h||'').toString().trim());
+        rawR = json.slice(hi+1).filter(r => r.some(c => c));
+      }
+      st.textContent = `${rawR.length} rader inlästa från "${file.name}"`;
+      buildMapper();
+    } catch(err) { st.textContent = 'Fel: ' + err.message; }
+  };
+  file.name.toLowerCase().endsWith('.csv') ? r.readAsText(file,'UTF-8') : r.readAsBinaryString(file);
+}
+
+function buildMapper() {
+  document.getElementById('mapper').style.display = 'block';
+  const opts = rawH.map((h,i) => `<option value="${i}">${h}</option>`).join('');
+  ['cDate','cMerch','cAmt'].forEach(id => document.getElementById(id).innerHTML = opts);
+  document.getElementById('cCard').innerHTML = '<option value="">— ingen —</option>' + opts;
+  const low = rawH.map(h => h.toLowerCase());
+  const g = (...cs) => { for (const c of cs) { const i = low.findIndex(h => h.includes(c)); if (i >= 0) return i; } return 0; };
+  document.getElementById('cDate').value  = g('datum','date','transak');
+  document.getElementById('cMerch').value = g('beskrivning','description','merchant','butik');
+  document.getElementById('cAmt').value   = g('belopp','amount','summa','debit','kredit');
+  const cg = g('kortmedlem','kortinnehavare','card member','cardholder');
+  if (cg > 0) document.getElementById('cCard').value = cg;
+
+  // Override with saved column mapping if available
+  if (colMap && Object.keys(colMap).length) {
+    const trySet = (id, val) => {
+      const el = document.getElementById(id);
+      if (val !== '' && val !== undefined && el.options[val]) el.value = val;
+    };
+    trySet('cDate', colMap.date); trySet('cMerch', colMap.merch);
+    trySet('cAmt', colMap.amt);   trySet('cCard', colMap.card);
+    // Show saved-map notice
+    const notice = document.getElementById('colMapSavedNotice');
+    if (notice) notice.style.display = 'flex';
+  }
+}
+
+function confirmImport() {
+  const di=parseInt(document.getElementById('cDate').value);
+  const mi2=parseInt(document.getElementById('cMerch').value);
+  const ai=parseInt(document.getElementById('cAmt').value);
+  const ci=document.getElementById('cCard').value;
+
+  // Save column mapping for next time
+  colMap = { date: di, merch: mi2, amt: ai, card: ci };
+  persistStorage();
+
+  const imported=[], skipped=[], credits=[];
+  rawR.forEach((row,idx) => {
+    const merch=(row[mi2]||'').trim(); if(!merch) return;
+    const rawAmt=(row[ai]||'').toString().replace(/\s/g,'').replace(',','.');
+    const amt=parseFloat(rawAmt.replace(/[^0-9.\-]/g,''));
+    if(isNaN(amt)||amt===0) return;
+    let date=(row[di]||'').trim();
+    // Parse date robustly — handles MM/DD/YYYY (Amex), YYYY-MM-DD, DD/MM/YYYY etc.
+    date = parseAmexDate(date);
+    const card=ci!==''?(row[parseInt(ci)]||'').trim()||'Amex':'Amex';
+    if(shouldSkip(merch)) { skipped.push({merch,amt,reason:skipReason(merch)}); return; }
+
+    // Detect month from transaction date; fall back to picker value
+    const month = date.length >= 7 ? date.slice(0,7) : gm();
+
+    // Annual fee: import as gemensam so it's split 50/50
+    const isAnnFee = isAnnualFee(merch);
+    const isCredit = amt < 0 && !isAnnFee;
+    const finalAmt = Math.abs(amt);
+    const mk = merchantKey(merch);
+    const suggestedBud = isAnnFee ? 'pren' : (learnedCats[mk] || null);
+
+    imported.push({
+      id: Date.now()+idx, date, merch, amt: finalAmt, card,
+      cat: 'gemensam', bud: suggestedBud,
+      src: isCredit ? 'credit' : 'import',
+      month, note: isAnnFee ? 'Årsavgift — delas 50/50' : ''
+    });
+  });
+
+  // Remove old imported rows for all affected months, then add new
+  const importedMonths = [...new Set(imported.map(t=>t.month))];
+  TX = TX.filter(t => !(importedMonths.includes(t.month) && (t.src==='import'||t.src==='credit')));
+  TX.push(...imported);
+
+  // Switch picker to the most common month in the file
+  if (importedMonths.length > 0) {
+    const freq = {};
+    imported.forEach(t => freq[t.month] = (freq[t.month]||0) + 1);
+    const dominant = Object.entries(freq).sort((a,b)=>b[1]-a[1])[0][0];
+    document.getElementById('monthPicker').value = dominant;
+  }
+  persistStorage();
+
+  const skipDiv=document.getElementById('skipInfo'), skipTxt=document.getElementById('skipText');
+  const autoSuggested = imported.filter(t=>t.bud).length;
+  if(skipped.length||autoSuggested) {
+    let msg = [];
+    if(skipped.length) msg.push(`${skipped.length} exkluderade (${skipped.map(s=>s.reason).join(', ')})`);
+    if(autoSuggested) msg.push(`${autoSuggested} fick automatisk budgetkategori`);
+    skipTxt.textContent = msg.join(' · ');
+    skipDiv.style.display='flex';
+  } else skipDiv.style.display='none';
+
+  document.getElementById('ist').textContent=`✓ ${imported.length} transaktioner importerade.`;
+  document.getElementById('mapper').style.display='none';
+  badge(); toast(`${imported.length} importerade · ${skipped.length} exkluderade · ${autoSuggested} auto-kategoriserade`);
+  goto('kat');
+}
+
+
+// ── MANUAL ──
+function addManual() {
+  const merch=document.getElementById('mMerch').value.trim();
+  const amt=parseFloat(document.getElementById('mAmt').value)||0;
+  if(!merch||!amt){toast('Fyll i butik och belopp');return;}
+  const date=document.getElementById('mDate').value||new Date().toISOString().slice(0,10);
+  const card=document.getElementById('mPayer').value;
+  const cat=document.getElementById('mCat').value;
+  const bud=document.getElementById('mBud').value||null;
+  const month=gm();
+  // Learn budget category from merchant
+  if(bud){ learnedCats[merchantKey(merch)] = bud; updateLearnedPanel(); }
+  TX.push({id:Date.now(),date,merch,amt,card,cat,bud,src:'manual',month,note:''});
+  document.getElementById('mMerch').value=''; document.getElementById('mAmt').value='';
+  badge(); persistStorage(); toast('Rad tillagd');
+}
+
+// ── CATEGORIES ──
+// Normalize merchant name to a key for learning
+function merchantKey(m) { return m.toLowerCase().replace(/[^a-zåäö0-9]/g,'').slice(0,24); }
+
+function setCat(id,cat){const t=TX.find(x=>x.id===id);if(t){t.cat=cat;renderList();badge();updateKatSub();persistStorage();}}
+
+function setBud(id,bud){
+  const t=TX.find(x=>x.id===id);
+  if(t){
+    t.bud=bud||null;
+    // Learn the association
+    if(bud) {
+      const mk = merchantKey(t.merch);
+      learnedCats[mk] = bud;
+      updateLearnedPanel();
+    }
+    renderList();persistStorage();
+  }
+}
+
+function setNote(id,note){const t=TX.find(x=>x.id===id);if(t){t.note=note||'';persistStorage();}}
+
+function setAllCat(cat){filtered().forEach(t=>t.cat=cat);renderList();badge();updateKatSub();persistStorage();}
+
+// Bulk selection
+function toggleSelect(id){
+  if(selectedIds.has(id)) selectedIds.delete(id);
+  else selectedIds.add(id);
+  renderList();
+}
+function selectAll(){filtered().forEach(t=>selectedIds.add(t.id));renderList();}
+function clearSelection(){selectedIds.clear();renderList();}
+function applyBulk(){
+  const cat=document.getElementById('bulkCatSel').value;
+  const bud=document.getElementById('bulkBudSel').value;
+  selectedIds.forEach(id=>{
+    const t=TX.find(x=>x.id===id);
+    if(t){
+      if(cat) t.cat=cat;
+      if(bud){t.bud=bud;learnedCats[merchantKey(t.merch)]=bud;}
+    }
+  });
+  selectedIds.clear();
+  renderList();badge();updateKatSub();persistStorage();
+  toast('Tillämpat på '+selectedIds.size+' poster');
+}
+
+// Swish modal
+function showSwish(){
+  const items=mi();
+  const month=gm();
+  const mn=new Date(month+'-01').toLocaleString('sv-SE',{month:'long',year:'numeric'});
+  const gem=items.filter(t=>t.cat==='gemensam').reduce((a,t)=>a+t.amt,0);
+  const akPriv=items.filter(t=>t.cat==='ak').reduce((a,t)=>a+t.amt,0);
+  const oscOut=items.filter(t=>t.cat==='oscar-out').reduce((a,t)=>a+t.amt,0);
+  const akOut=items.filter(t=>t.cat==='ak-out').reduce((a,t)=>a+t.amt,0);
+  const netto=Math.round(gem/2+akPriv+oscOut/2-akOut/2);
+  const lines=[];
+  lines.push('Hej! Här är utläggstämningen för '+mn+' 🧾');
+  lines.push('');
+  if(gem>0) lines.push('Gemensamt på Amex: '+kr(gem)+' → din halva '+kr(gem/2));
+  if(akPriv>0) lines.push('Dina privata köp: '+kr(akPriv));
+  if(oscOut>0) lines.push('Jag la ut gemensamt: '+kr(oscOut)+' → din halva '+kr(oscOut/2));
+  if(akOut>0) lines.push('Du la ut gemensamt: '+kr(akOut)+' → min halva '+kr(akOut/2));
+  lines.push('');
+  if(netto>0) lines.push('👉 Du swishar '+kr(netto)+' till Oscar');
+  else if(netto<0) lines.push('👉 Jag swishar '+kr(Math.abs(netto))+' till dig');
+  else lines.push('👉 Vi är jämna, ingen betalning behövs!');
+  document.getElementById('swishMsg').textContent=lines.join('\n');
+  document.getElementById('swishModal').style.display='flex';
+}
+function closeSwish(){document.getElementById('swishModal').style.display='none';}
+function copySwish(){
+  navigator.clipboard.writeText(document.getElementById('swishMsg').textContent)
+    .then(()=>toast('Kopierat! ✓'))
+    .catch(()=>{
+      const el=document.getElementById('swishMsg');
+      const r=document.createRange();r.selectNode(el);
+      window.getSelection().removeAllRanges();window.getSelection().addRange(r);
+      document.execCommand('copy');toast('Kopierat! ✓');
+    });
+}
+
+function setFilter(f) {
+  filter=f;
+  document.querySelectorAll('.fp').forEach(p=>p.classList.remove('active'));
+  document.getElementById('fp-'+f).classList.add('active');
+  renderList();
+}
+function filtered(){
+  const items=mi();
+  if(filter==='alla') return items;
+  if(filter==='ingen') return items.filter(t=>!t.cat);
+  return items.filter(t=>t.cat===filter);
+}
+function badge(){
+  const n=mi().filter(t=>!t.cat).length;
+  const b=document.getElementById('nbadge');
+  if(!b) return;
+  b.textContent=n; b.style.display=n>0?'inline-flex':'none';
+}
+
+const CATS=[
+  {k:'gemensam',l:'Gem',cls:'pg'},
+  {k:'oscar',l:'Oscar',cls:'po'},
+  {k:'ak',l:'AK',cls:'pa'},
+  {k:'oscar-out',l:'O-ut',cls:'poo'},
+  {k:'ak-out',l:'AK-ut',cls:'pao'},
+];
+
+function budSelectH(t) {
+  const col = t.bud ? budColor(t.bud) : null;
+  const sty = col ? `background:${col}22;color:${col};border-color:${col}44;` : '';
+  const opts = '<option value="">— kategori —</option>' +
+    BUD_GROUPS.map(g =>
+      `<optgroup label="${g.icon} ${g.l}"><option value="${g.k}"${t.bud===g.k?' selected':''}>${g.l} (allmänt)</option>${g.subs.map(s=>`<option value="${s.k}"${t.bud===s.k?' selected':''}>${s.l}</option>`).join('')}</optgroup>`
+    ).join('');
+  const lbl = t.bud ? (BUD_CATS.find(b=>b.k===t.bud)?.l||'?') : '—';
+  return `<select style="${sty}font-size:11px;padding:3px 7px;border-radius:99px;width:100%;border:1px solid ${col?col+'44':'var(--bd2)'};" onchange="setBud(${t.id},this.value)">${opts}</select>`;
+}
+
+function pillsH(t){return CATS.map(d=>`<button class="pill ${t.cat===d.k?d.cls:''}" onclick="setCat(${t.id},'${d.k}')">${d.l}</button>`).join('');}
+
+function renderList(){
+  const q=(document.getElementById('txSearch')||{}).value||'';
+  const ql=q.toLowerCase();
+  let items=filtered();
+  if(ql) items=items.filter(t=>t.merch.toLowerCase().includes(ql)||(t.note||'').toLowerCase().includes(ql)||String(Math.round(t.amt)).includes(ql));
+  items=items.sort((a,b)=>a.date.localeCompare(b.date));
+  const sc=document.getElementById('searchCount');
+  if(sc) sc.textContent=ql?`${items.length} träff${items.length===1?'':'ar'}`:'';
+  const bulkBar=document.getElementById('bulkBar');
+  const bulkCount=document.getElementById('bulkCount');
+  if(bulkBar){bulkBar.style.display=selectedIds.size>0?'flex':'none';if(bulkCount)bulkCount.textContent=`${selectedIds.size} markerade`;}
+  const el=document.getElementById('txList');
+  if(!items.length){
+    el.innerHTML=`<div class="empty"><div class="ei"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h3.75M9 15h3.75M9 18h3.75"/></svg></div>${filter==='ingen'&&!ql?'Alla poster är kategoriserade! 🎉':ql?'Ingen träff på "'+q+'"':'Inga poster'}</div>`;
+    updateKatSub(); return;
+  }
+  const allSelected=items.length>0&&items.every(t=>selectedIds.has(t.id));
+  el.innerHTML=`<div class="txw">
+    <div class="txh with-bud">
+      <input type="checkbox" class="chk" ${allSelected?'checked':''} onchange="${allSelected?'clearSelection()':'selectAll()'}" title="Markera/avmarkera alla">
+      <span>Datum</span><span>Butik</span><span>Belopp</span><span>Kortmedlem</span><span>Budget</span><span>Delning</span><span></span><span></span>
+    </div>
+    ${items.map(t=>{
+      const isSel=selectedIds.has(t.id);
+      const isCredit=t.src==='credit';
+      const mk=merchantKey(t.merch);
+      const hasSuggestion=t.bud&&learnedCats[mk]===t.bud;
+      const hasNote=t.note&&t.note.trim();
+      return `<div class="txr with-bud${t.src==='manual'?' manual':''}${isSel?' selected':''}">
+        <input type="checkbox" class="chk" ${isSel?'checked':''} onchange="toggleSelect(${t.id})">
+        <div class="txdate">${fd(t.date)}</div>
+        <div class="txname" title="${t.merch}">${t.merch}${t.src==='manual'?'<span class="tagm" style="margin-left:4px">manuell</span>':''}${isCredit?'<span class="credit-tag" style="margin-left:4px">kredit</span>':''}${hasSuggestion?'<span class="suggestion-chip" style="margin-left:4px" title="Auto-kategoriserad">✨</span>':''}${hasNote?`<br><span style="font-size:11px;color:var(--tx2)">💬 ${t.note}</span>`:''}</div>
+        <div class="txamt" style="color:${isCredit?'var(--gem)':'inherit'}">${isCredit?'−':''}${kr(t.amt)}</div>
+        <div class="txcard">${t.card||'—'}</div>
+        <div>${budSelectH(t)}</div>
+        <div class="pills">${pillsH(t)}</div>
+        <button class="comment-btn ${hasNote?'has-comment':''}" onclick="toggleComment(${t.id})" title="Kommentar">💬</button>
+        <button class="del" onclick="delRow(${t.id})"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+      </div>
+      <div id="note-${t.id}" style="display:none;padding:4px 14px 8px 44px;background:var(--bg2);border-bottom:1px solid var(--bd);">
+        <input class="comment-inp" type="text" placeholder="Skriv en kommentar…" value="${(t.note||'').replace(/"/g,'&quot;')}" onchange="setNote(${t.id},this.value)" onblur="setNote(${t.id},this.value)">
+      </div>`;
+    }).join('')}
+  </div>`;
+  updateKatSub();
+}
+
+function toggleComment(id){const el=document.getElementById('note-'+id);if(el){const show=el.style.display==='none';el.style.display=show?'block':'none';if(show)el.querySelector('input').focus();}}
+
+function delRow(id){TX=TX.filter(t=>t.id!==id);renderList();badge();updateKatSub();persistStorage();}
+
+// ── SUMMARY ──
+function renderSum(){
+  const items=mi(), month=gm();
+  const mn=new Date(month+'-01').toLocaleString('sv-SE',{month:'long',year:'numeric'});
+  document.getElementById('sumSub').textContent=mn.charAt(0).toUpperCase()+mn.slice(1);
+  const s=f=>items.filter(f).reduce((a,t)=>a+t.amt,0);
+  const amexTot=s(t=>t.src==='import');
+  const gem=s(t=>t.cat==='gemensam');
+  const oscPriv=s(t=>t.cat==='oscar');
+  const akPriv=s(t=>t.cat==='ak');
+  const oscOut=s(t=>t.cat==='oscar-out');
+  const akOut=s(t=>t.cat==='ak-out');
+  const uncat=items.filter(t=>!t.cat).length;
+  const netto=Math.round(gem/2+akPriv+oscOut/2-akOut/2);
+  const heroC=netto>0?'hak':netto<0?'hosc':'heven';
+  const heroL=netto>0?'Annakarin betalar Oscar':netto<0?'Oscar betalar Annakarin':'Ni är jämna';
+  const amtC=netto>0?'green':'purple';
+  const totC=netto>0?'green':'purple';
+  const c=document.getElementById('sumContent');
+  if(!items.length){c.innerHTML=`<div class="empty"><div class="ei"></div>Inga transaktioner</div>`;return;}
+  c.innerHTML=`
+    ${uncat>0?`<div class="warn"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z"/></svg>${uncat} poster ej kategoriserade</div>`:''}
+    <div class="hero ${heroC}">
+      <div><div class="hlbl">${heroL}</div><div class="hamt ${amtC}">${kr(Math.abs(netto))}</div><div class="hdet">${mn} · Amex-faktura ${kr(amexTot)}</div></div>
+      <div style="text-align:right">
+        <div style="font-size:10px;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">Amex-faktura</div>
+        <div style="font-size:28px;font-weight:300;letter-spacing:-.03em;font-family:'DM Mono',monospace">${kr(amexTot)}</div>
+        <div style="font-size:11px;color:var(--tx3);margin-top:3px">${items.filter(t=>t.src==='import').length} poster</div>
+      </div>
+    </div>
+    <div class="sgrid">
+      <div class="sc gem"><div class="sclbl">Gemensam (Amex)</div><div class="scamt">${kr(gem)}</div><div class="scsub">Vardera ${kr(gem/2)}</div></div>
+      <div class="sc osc"><div class="sclbl">Oscar — privat</div><div class="scamt">${kr(oscPriv)}</div><div class="scsub">Oscars kostnad</div></div>
+      <div class="sc ak"><div class="sclbl">Annakarin — privat</div><div class="scamt">${kr(akPriv)}</div><div class="scsub">AK betalar Oscar</div></div>
+      <div class="sc oo"><div class="sclbl">Oscar la ut</div><div class="scamt">${kr(oscOut)}</div><div class="scsub">AK betalar ½ = ${kr(oscOut/2)}</div></div>
+      <div class="sc ao"><div class="sclbl">AK la ut</div><div class="scamt">${kr(akOut)}</div><div class="scsub">Oscar betalar ½ = ${kr(akOut/2)}</div></div>
+    </div>
+    <div class="cbox">
+      <div class="slbl" style="margin-bottom:13px">Hur vi kom fram till ${kr(Math.abs(netto))}</div>
+      <div class="crow"><div class="crl"><div class="crdot" style="background:var(--gem)"></div>½ av gemensamt på Amex</div><div class="crr">${kr(gem/2)}</div></div>
+      <div class="crow"><div class="crl"><div class="crdot" style="background:var(--ak)"></div>Annakarins privata (Amex)</div><div class="crr">${kr(akPriv)}</div></div>
+      <div class="crow"><div class="crl"><div class="crdot" style="background:var(--oo)"></div>½ av Oscars utlägg (andra kort)</div><div class="crr">${kr(oscOut/2)}</div></div>
+      <div class="crow minus"><div class="crl"><div class="crdot" style="background:var(--ao)"></div>− ½ av AKs utlägg (andra kort)</div><div class="crr">−${kr(akOut/2)}</div></div>
+      <div class="crow tot ${totC}"><div class="crl">${netto>=0?'Annakarin betalar Oscar':'Oscar betalar Annakarin'}</div><div class="crr">${kr(Math.abs(netto))}</div></div>
+    </div>
+    ${renderBreakdown(items)}
+  `;
+}
+
+function renderBreakdown(items){
+  const groups=[
+    {lbl:'Gemensamma (Amex)',col:'var(--gem)',f:t=>t.cat==='gemensam'&&t.src==='import'},
+    {lbl:'Oscar — privat',col:'var(--osc)',f:t=>t.cat==='oscar'},
+    {lbl:'Annakarin — privat',col:'var(--ak)',f:t=>t.cat==='ak'},
+    {lbl:'Oscar la ut (andra kort)',col:'var(--oo)',f:t=>t.cat==='oscar-out'},
+    {lbl:'AK la ut (andra kort)',col:'var(--ao)',f:t=>t.cat==='ak-out'},
+    {lbl:'Okategoriserade',col:'var(--tx3)',f:t=>!t.cat},
+  ];
+  return groups.filter(g=>items.filter(g.f).length).map(g=>{
+    const its=items.filter(g.f).sort((a,b)=>a.date.localeCompare(b.date));
+    const tot=its.reduce((a,t)=>a+t.amt,0);
+    return `<div class="bds">
+      <div class="bdl"><span style="display:flex;align-items:center;gap:7px"><span style="width:8px;height:8px;border-radius:50%;background:${g.col};display:inline-block;flex-shrink:0"></span>${g.lbl}</span><span>${kr(tot)}</span></div>
+      <div class="txw"><div class="txh no-bud"><span>Datum</span><span>Butik</span><span>Belopp</span><span>Kortmedlem</span></div>${its.map(t=>`<div class="txr no-bud"><div class="txdate">${fd(t.date)}</div><div class="txname">${t.merch}</div><div class="txamt">${kr(t.amt)}</div><div class="txcard">${t.card||'—'}</div></div>`).join('')}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── BUDGET PAGE ──
+let budViewMonth = null;
+let budViewTab = 'gemensam'; // 'gemensam' | 'oscar' | 'ak'
+
+function renderBudget() {
+  const month = gm();
+  const allMonths = [...new Set([...Object.keys(saved), ...TX.map(t=>t.month)])].sort().reverse();
+  if (!budViewMonth || !allMonths.includes(budViewMonth)) budViewMonth = month;
+
+  // Month tabs
+  const tabsEl = document.getElementById('budMonthTabs');
+  tabsEl.innerHTML = allMonths.slice(0,6).map(m => {
+    const mn = new Date(m+'-01').toLocaleString('sv-SE',{month:'short',year:'2-digit'});
+    return `<button class="mtab${m===budViewMonth?' active':''}" onclick="budViewMonth='${m}';renderBudget()">${mn}</button>`;
+  }).join('');
+
+  const viewItems = budViewMonth === month
+    ? TX.filter(t => t.month === budViewMonth)
+    : (saved[budViewMonth] || []);
+
+  const mn = new Date(budViewMonth+'-01').toLocaleString('sv-SE',{month:'long',year:'numeric'});
+  document.getElementById('budSub').textContent = mn.charAt(0).toUpperCase()+mn.slice(1);
+
+  // Items per tab (by delning category)
+  const tabItems = {
+    gemensam: viewItems.filter(t => t.cat === 'gemensam' || t.cat === 'oscar-out' || t.cat === 'ak-out'),
+    oscar:    viewItems.filter(t => t.cat === 'oscar'),
+    ak:       viewItems.filter(t => t.cat === 'ak'),
+  };
+
+  // Spending per budget group per tab
+  function groupSpending(items) {
+    const sp = {};
+    BUD_GROUPS.forEach(g => sp[g.k] = 0);
+    items.forEach(t => {
+      if (t.bud) { const pg = budParent(t.bud); if (sp[pg] !== undefined) sp[pg] += t.amt; }
+    });
+    return sp;
+  }
+
+  const allSp = {
+    gemensam: groupSpending(tabItems.gemensam),
+    oscar:    groupSpending(tabItems.oscar),
+    ak:       groupSpending(tabItems.ak),
+  };
+
+  const totals = {
+    gemensam: Object.values(allSp.gemensam).reduce((a,b)=>a+b,0),
+    oscar:    Object.values(allSp.oscar).reduce((a,b)=>a+b,0),
+    ak:       Object.values(allSp.ak).reduce((a,b)=>a+b,0),
+  };
+
+  const budTotals = {
+    gemensam: BUD_KEYS.reduce((a,k)=>a+(budgets[k]||0),0),
+    oscar:    BUD_KEYS.reduce((a,k)=>a+(budgets[k+'_osc']||0),0),
+    ak:       BUD_KEYS.reduce((a,k)=>a+(budgets[k+'_ak']||0),0),
+  };
+
+  const suffix = { gemensam: '', oscar: '_osc', ak: '_ak' };
+
+  const c2 = document.getElementById('budContent');
+
+  // ── Person flik-switcher ──
+  function tabPct(key) {
+    const t = totals[key], b = budTotals[key];
+    return b > 0 ? Math.round(t/b*100) + '%' : kr(t);
+  }
+
+  const tabColors = { gemensam:'var(--gem)', oscar:'var(--osc)', ak:'var(--ak)' };
+  const tabLabels = { gemensam:'Gemensamt', oscar:'Oscar', ak:'Annakarin' };
+
+  const tabHtml = `
+    <div style="display:flex;gap:0;margin-bottom:20px;background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden;width:fit-content;">
+      ${['gemensam','oscar','ak'].map(tab => {
+        const active = tab === budViewTab;
+        const col = tabColors[tab];
+        const over = budTotals[tab] > 0 && totals[tab] > budTotals[tab];
+        return `<button onclick="budViewTab='${tab}';renderBudget()"
+          style="padding:10px 22px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:${active?600:400};
+          background:${active?'var(--bg4)':'transparent'};
+          color:${active?col:'var(--tx2)'};
+          border-bottom:2px solid ${active?col:'transparent'};
+          transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:2px;">
+          ${tabLabels[tab]}
+          <span style="font-size:10px;font-family:'DM Mono',monospace;color:${over?'#ef4444':active?col:'var(--tx3)'};">${tabPct(tab)}</span>
+        </button>`;
+      }).join('')}
+    </div>`;
+
+  // ── Active tab content ──
+  const items   = tabItems[budViewTab];
+  const sp      = allSp[budViewTab];
+  const total   = totals[budViewTab];
+  const budTotal = budTotals[budViewTab];
+  const suf     = suffix[budViewTab];
+  const col     = tabColors[budViewTab];
+  const uncatAmt = items.filter(t=>!t.bud).reduce((a,t)=>a+t.amt,0);
+  const pct = budTotal > 0 ? Math.round(total/budTotal*100) : null;
+  const over = budTotal > 0 && total > budTotal;
+
+  // KPI strip
+  const kpiHtml = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">
+      <div class="sc" style="border-top:2px solid ${col}">
+        <div class="sclbl">Spenderat</div>
+        <div class="scamt" style="color:${over?'#ef4444':'inherit'}">${kr(total)}</div>
+        <div class="scsub">${pct!==null?pct+'% av budgeten':''}</div>
+        ${budTotal>0?`<div class="bcat-bar-bg" style="margin-top:6px"><div class="bcat-bar" style="width:${Math.min(pct||0,100)}%;background:${over?'#ef4444':col}"></div></div>`:''}
+      </div>
+      <div class="sc" style="border-top:2px solid ${over?'#ef4444':'var(--osc)'}">
+        <div class="sclbl">Kvar av budget</div>
+        <div class="scamt" style="color:${over?'#ef4444':'inherit'}">${budTotal>0?kr(Math.max(0,budTotal-total)):'—'}</div>
+        <div class="scsub">${budTotal>0?kr(budTotal)+' budget':''}</div>
+      </div>
+      <div class="sc" style="border-top:2px solid var(--tx3)">
+        <div class="sclbl">Ej kategoriserat</div>
+        <div class="scamt">${kr(uncatAmt)}</div>
+        <div class="scsub">${items.filter(t=>!t.bud).length} poster</div>
+      </div>
+    </div>`;
+
+  // Category cards
+  let cardsHtml = '<div class="budget-grid">';
+  BUD_GROUPS.forEach(g => {
+    const spent  = sp[g.k] || 0;
+    const budget = budgets[g.k+suf] !== undefined ? budgets[g.k+suf] : (budgets[g.k]||0);
+    const pct2   = budget > 0 ? Math.min(spent/budget*100,100) : 0;
+    const catOver = budget > 0 && spent > budget;
+    const barCol  = catOver ? '#ef4444' : g.color;
+    const subLines = g.subs
+      .map(s => ({s, v: items.filter(t=>t.bud===s.k).reduce((a,t)=>a+t.amt,0)}))
+      .filter(x => x.v > 0)
+      .map(x => `<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--tx2);padding:2px 0"><span>${x.s.l}</span><span style="font-family:'DM Mono',monospace">${kr(x.v)}</span></div>`)
+      .join('');
+    // Always show — even zero-spend categories so budget overview is complete
+    cardsHtml += `<div class="bcat-card" style="border-top-color:${barCol};">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+        <span style="font-size:16px">${g.icon}</span>
+        <div class="bcat-name">${g.l}</div>
+      </div>
+      <div class="bcat-spent" style="color:${catOver?'#ef4444':'inherit'}">${kr(spent)}</div>
+      <div class="bcat-budget">${budget>0?`av ${kr(budget)}`:'Ingen gräns'}</div>
+      ${budget>0?`<div class="bcat-bar-bg"><div class="bcat-bar" style="width:${pct2}%;background:${barCol}"></div></div>`:''}
+      ${catOver?`<div class="bcat-over">+${kr(spent-budget)} över</div>`:''}
+      ${subLines?`<div style="margin-top:8px;border-top:1px solid var(--bd);padding-top:6px;">${subLines}</div>`:''}
+    </div>`;
+  });
+  cardsHtml += '</div>';
+
+  // Trend
+  const allSpAll = {};
+  BUD_GROUPS.forEach(g => allSpAll[g.k] = (allSp.gemensam[g.k]||0)+(allSp.oscar[g.k]||0)+(allSp.ak[g.k]||0));
+  const topGroups = BUD_GROUPS.filter(g=>sp[g.k]>0).sort((a,b)=>sp[b.k]-sp[a.k]).slice(0,6);
+  let trendHtml = '';
+  if (topGroups.length > 0) {
+    trendHtml = `<div style="font-size:13px;font-weight:500;margin-bottom:12px;color:var(--tx2)">Trend — ${tabLabels[budViewTab].toLowerCase()}, senaste månader</div><div class="trend-grid">`;
+    topGroups.forEach(g => {
+      const months6 = allMonths.slice(0,6).reverse();
+      const vals = months6.map(m2 => {
+        const its = m2===month ? TX.filter(t=>t.month===m2) : (saved[m2]||[]);
+        const fil = budViewTab==='oscar' ? its.filter(t=>t.cat==='oscar')
+                  : budViewTab==='ak'    ? its.filter(t=>t.cat==='ak')
+                  : its.filter(t=>t.cat==='gemensam'||t.cat==='oscar-out'||t.cat==='ak-out');
+        return fil.filter(t=>t.bud&&budParent(t.bud)===g.k).reduce((a,t)=>a+t.amt,0);
+      });
+      const maxVal = Math.max(...vals,1);
+      trendHtml += `<div class="trend-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-size:13px;font-weight:500;display:flex;align-items:center;gap:7px;">${g.icon}<span>${g.l}</span></div>
+          <div style="font-family:'DM Mono',monospace;font-size:13px;font-weight:600">${kr(sp[g.k])}</div>
+        </div>
+        <div class="trend-bars">
+          ${months6.map((m2,i)=>{
+            const h=Math.round(vals[i]/maxVal*52)+4;
+            const lbl=new Date(m2+'-01').toLocaleString('sv-SE',{month:'short'});
+            return `<div class="tbar-wrap"><div class="tbar" style="height:${h}px;background:${m2===budViewMonth?g.color:g.color+'55'}"></div><div class="tbar-lbl">${lbl}</div></div>`;
+          }).join('')}
+        </div>
+      </div>`;
+    });
+    trendHtml += '</div>';
+  }
+
+  c2.innerHTML = tabHtml + kpiHtml + cardsHtml + trendHtml;
+}
+
+
+// ── BUDGET SETTINGS ──
+let bsetupPerson = 'gemensam';
+
+function renderBsetup() {
+  const el = document.getElementById('bsetupContent');
+  const suffix = bsetupPerson==='oscar' ? '_osc' : bsetupPerson==='ak' ? '_ak' : '';
+  const personLabel = bsetupPerson==='oscar' ? 'Oscar' : bsetupPerson==='ak' ? 'Annakarin' : 'Gemensam (total)';
+  el.innerHTML = `
+    <div style="display:flex;gap:6px;margin-bottom:18px;">
+      <button class="fp${bsetupPerson==='gemensam'?' active':''}" onclick="bsetupPerson='gemensam';renderBsetup()">Gemensam</button>
+      <button class="fp${bsetupPerson==='oscar'?' active':''}" onclick="bsetupPerson='oscar';renderBsetup()" style="${bsetupPerson==='oscar'?'background:var(--osc-bg);color:var(--osc);border-color:var(--osc-bd)':''}">Oscar</button>
+      <button class="fp${bsetupPerson==='ak'?' active':''}" onclick="bsetupPerson='ak';renderBsetup()" style="${bsetupPerson==='ak'?'background:var(--ak-bg);color:var(--ak);border-color:var(--ak-bd)':''}">Annakarin</button>
+    </div>
+    <p style="font-size:13px;color:var(--tx2);margin-bottom:16px;">Budget för <strong>${personLabel}</strong>. Sätt 0 = ingen gräns.</p>
+    <div class="budget-setup">
+      ${BUD_GROUPS.map(g => `
+        <div class="brow">
+          <span style="font-size:16px;line-height:1">${g.icon}</span>
+          <div class="brow-name">${g.l}</div>
+          <input type="number" id="bud_${g.k}" value="${budgets[g.k+suffix]!==undefined?budgets[g.k+suffix]:(budgets[g.k]||0)}" min="0" step="100" placeholder="0">
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function saveBudgetSettings() {
+  const suffix = bsetupPerson==='oscar' ? '_osc' : bsetupPerson==='ak' ? '_ak' : '';
+  BUD_GROUPS.forEach(g => {
+    const val = parseInt(document.getElementById('bud_'+g.k).value) || 0;
+    budgets[g.k+suffix] = val;
+    if (!suffix) budgets[g.k] = val; // also keep base key in sync
+  });
+  persistStorage();
+  toast('Budgetinställningar sparade ✓');
+}
+
+// ── SAVE / HISTORY ──
+async function saveMonth() {
+  const month=gm(), items=mi();
+  if(!items.length){toast('Inga transaktioner att spara');return;}
+  saved[month]=items;
+  await persistStorage();
+  toast('Månad sparad ✓');
+}
+
+function renderHist() {
+  const keys=Object.keys(saved).sort().reverse();
+  const c=document.getElementById('histList');
+  if(!keys.length){c.innerHTML=`<div class="empty"><div class="ei"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>Ingen historik sparad ännu</div>`;return;}
+  c.innerHTML=keys.map(month=>{
+    const its=saved[month];
+    const amexTot=its.filter(t=>t.src==='import').reduce((a,t)=>a+t.amt,0);
+    const gem=its.filter(t=>t.cat==='gemensam').reduce((a,t)=>a+t.amt,0);
+    const akPriv=its.filter(t=>t.cat==='ak').reduce((a,t)=>a+t.amt,0);
+    const oscOut=its.filter(t=>t.cat==='oscar-out').reduce((a,t)=>a+t.amt,0);
+    const akOut=its.filter(t=>t.cat==='ak-out').reduce((a,t)=>a+t.amt,0);
+    const netto=Math.round(gem/2+akPriv+oscOut/2-akOut/2);
+    const mn=new Date(month+'-01').toLocaleString('sv-SE',{month:'long',year:'numeric'});
+    const ns=netto>0?`AK betalar ${kr(netto)}`:netto<0?`Oscar betalar ${kr(Math.abs(netto))}`:'Jämna';
+    const nc=netto>0?'var(--gem)':netto<0?'var(--ao)':'var(--tx2)';
+    return `<div class="hi" onclick="loadMonth('${month}')">
+      <div>
+        <div style="font-size:14px;font-weight:500;text-transform:capitalize">${mn}</div>
+        <div style="font-size:12px;color:var(--tx2);margin-top:3px">${its.length} poster</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:22px">
+        <div style="text-align:right">
+          <div style="font-size:10px;color:var(--tx3);margin-bottom:2px">Amex-faktura</div>
+          <div style="font-family:'DM Mono',monospace;font-size:14px;font-weight:500">${kr(amexTot)}</div>
+        </div>
+        <div style="text-align:right;min-width:160px">
+          <div style="font-size:10px;color:var(--tx3);margin-bottom:2px">Netto</div>
+          <div style="font-family:'DM Mono',monospace;font-size:14px;font-weight:600;color:${nc}">${ns}</div>
+        </div>
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:16px;height:16px;color:var(--tx3)"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function loadMonth(month) {
+  if(saved[month]){TX=[...TX.filter(t=>t.month!==month),...saved[month]];mp.value=month;goto('kat');badge();updateKatSub();}
+}
+
+// ── JSON EXPORT / IMPORT ──
+function exportJSON() {
+  const data={saved,tx:TX,budgets,colMap,learnedCats,exportedAt:new Date().toISOString()};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=`splitr-${gm()}.json`; a.click();
+  URL.revokeObjectURL(url); toast('JSON exporterad ✓');
+}
+
+function importJSON(event) {
+  const file=event.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try {
+      const data=JSON.parse(e.target.result);
+      if(data.saved)       saved       = data.saved;
+      if(data.tx)          TX          = data.tx;
+      if(data.budgets)     budgets     = data.budgets;
+      if(data.colMap)      colMap      = data.colMap;
+      if(data.learnedCats) learnedCats = data.learnedCats;
+      // Budget key defaults + migration handled by migrateData()
+      persistStorage();
+      migrateData();
+      badge(); updateKatSub(); renderList(); renderHist(); populateBudSelects(); renderBsetup(); updateLearnedPanel();
+      toast('Data inläst från '+file.name+' ✓');
+      event.target.value='';
+    } catch(err){toast('Fel vid inläsning: '+err.message);}
+  };
+  reader.readAsText(file);
+}
+
+// ── HELÅRSVY ──
+let arViewYear = null;
+let arViewPerson = 'gemensam';
+
+function renderAr() {
+  // Collect all years with data
+  const allMonths = [...new Set([...Object.keys(saved), ...TX.map(t=>t.month)])].sort();
+  const allYears  = [...new Set(allMonths.map(m => m.slice(0,4)))].sort().reverse();
+  if (!allYears.length) {
+    document.getElementById('arContent').innerHTML = `<div class="empty"><div class="ei"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5"/></svg></div>Spara månader för att se helårsvyn</div>`;
+    return;
+  }
+  if (!arViewYear || !allYears.includes(arViewYear)) arViewYear = allYears[0];
+
+  document.getElementById('arSub').textContent = 'Budget & utlägg ' + arViewYear;
+
+  // Year tabs
+  document.getElementById('arYearTabs').innerHTML = allYears.map(y =>
+    `<button class="mtab${y===arViewYear?' active':''}" onclick="arViewYear='${y}';renderAr()">${y}</button>`
+  ).join('');
+
+  // Gather all items for this year (saved months + current TX if in year)
+  const yearMonths = allMonths.filter(m => m.startsWith(arViewYear));
+  const curMonth = document.getElementById('monthPicker').value;
+  const allItems = yearMonths.flatMap(m =>
+    m === curMonth ? TX.filter(t => t.month === m) : (saved[m] || [])
+  );
+
+  // Person filter
+  const items = arViewPerson === 'oscar'
+    ? allItems.filter(t => t.card && t.card.toLowerCase().includes('oscar'))
+    : arViewPerson === 'ak'
+    ? allItems.filter(t => t.card && (t.card.toLowerCase().includes('annakarin') || t.card.toLowerCase().includes('lind')))
+    : allItems;
+
+  const suffix  = arViewPerson === 'oscar' ? '_osc' : arViewPerson === 'ak' ? '_ak' : '';
+  const months12 = Array.from({length:12}, (_,i) => `${arViewYear}-${String(i+1).padStart(2,'0')}`);
+  const MONTH_NAMES = ['Jan','Feb','Mar','Apr','Maj','Jun','Jul','Aug','Sep','Okt','Nov','Dec'];
+
+  // Totals per month
+  const monthTotals = months12.map(m => {
+    const its = m === curMonth ? TX.filter(t=>t.month===m) : (saved[m]||[]);
+    const fil  = arViewPerson === 'oscar' ? its.filter(t=>t.card&&t.card.toLowerCase().includes('oscar'))
+               : arViewPerson === 'ak'    ? its.filter(t=>t.card&&(t.card.toLowerCase().includes('annakarin')||t.card.toLowerCase().includes('lind')))
+               : its;
+    return fil.reduce((a,t) => a+t.amt, 0);
+  });
+
+  const yearTotal   = monthTotals.reduce((a,b) => a+b, 0);
+  const monthBudget = BUD_KEYS.reduce((a,k) => a+(budgets[k+suffix]||budgets[k]||0), 0);
+  const yearBudget  = monthBudget * 12;
+  const avgMonthly  = yearTotal / Math.max(yearMonths.length, 1);
+  const savedMonthCount = yearMonths.filter(m => saved[m] || m===curMonth).length;
+
+  // Spending per group per month (for heatmap / table)
+  const groupMonthData = {}; // groupKey -> [jan..dec]
+  BUD_GROUPS.forEach(g => {
+    groupMonthData[g.k] = months12.map(m => {
+      const its = m===curMonth ? TX.filter(t=>t.month===m) : (saved[m]||[]);
+      const fil  = arViewPerson==='oscar' ? its.filter(t=>t.card&&t.card.toLowerCase().includes('oscar'))
+                 : arViewPerson==='ak'    ? its.filter(t=>t.card&&(t.card.toLowerCase().includes('annakarin')||t.card.toLowerCase().includes('lind')))
+                 : its;
+      return fil.filter(t=>t.bud&&budParent(t.bud)===g.k).reduce((a,t)=>a+t.amt,0);
+    });
+  });
+  const groupTotals = {};
+  BUD_GROUPS.forEach(g => { groupTotals[g.k] = groupMonthData[g.k].reduce((a,b)=>a+b,0); });
+
+  const maxMonth = Math.max(...monthTotals, 1);
+
+  const c2 = document.getElementById('arContent');
+
+  // Person switcher
+  const personHtml = `<div style="display:flex;gap:6px;margin-bottom:20px;">
+    <button class="fp${arViewPerson==='gemensam'?' active':''}" onclick="arViewPerson='gemensam';renderAr()">Alla</button>
+    <button class="fp${arViewPerson==='oscar'?' active':''}" onclick="arViewPerson='oscar';renderAr()" style="${arViewPerson==='oscar'?'background:var(--osc-bg);color:var(--osc);border-color:var(--osc-bd)':''}">Oscar</button>
+    <button class="fp${arViewPerson==='ak'?' active':''}" onclick="arViewPerson='ak';renderAr()" style="${arViewPerson==='ak'?'background:var(--ak-bg);color:var(--ak);border-color:var(--ak-bd)':''}">Annakarin</button>
+  </div>`;
+
+  // KPI row
+  const kpiHtml = `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;">
+    <div class="sc" style="border-top:2px solid var(--gem)">
+      <div class="sclbl">Totalt ${arViewYear}</div>
+      <div class="scamt">${kr(yearTotal)}</div>
+      <div class="scsub">${savedMonthCount} månader sparade</div>
+    </div>
+    <div class="sc" style="border-top:2px solid var(--osc)">
+      <div class="sclbl">Snitt per månad</div>
+      <div class="scamt">${kr(avgMonthly)}</div>
+      <div class="scsub">baserat på ${savedMonthCount} månader</div>
+    </div>
+    <div class="sc" style="border-top:2px solid ${yearBudget>0&&yearTotal>yearBudget?'#ef4444':'var(--ao)'}">
+      <div class="sclbl">Årsbudget</div>
+      <div class="scamt" style="color:${yearBudget>0&&yearTotal>yearBudget?'#ef4444':'inherit'}">${yearBudget>0?kr(yearBudget):'—'}</div>
+      <div class="scsub">${yearBudget>0?kr(monthBudget)+'/mån':''}</div>
+    </div>
+    <div class="sc" style="border-top:2px solid ${yearBudget>0&&yearTotal>yearBudget?'#ef4444':'var(--gem)'}">
+      <div class="sclbl">Kvar av årsbudget</div>
+      <div class="scamt" style="color:${yearBudget>0&&yearTotal>yearBudget?'#ef4444':'inherit'}">${yearBudget>0?kr(Math.max(0,yearBudget-yearTotal)):'—'}</div>
+      <div class="scsub">${yearBudget>0?Math.round(yearTotal/yearBudget*100)+'% använt':''}</div>
+    </div>
+  </div>`;
+
+  // Monthly bar chart
+  const barMaxH = 80;
+  const barHtml = `
+    <div class="card" style="margin-bottom:20px;">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--tx3);font-weight:600;margin-bottom:16px;">Utlägg per månad</div>
+      <div style="display:grid;grid-template-columns:repeat(12,1fr);gap:4px;align-items:flex-end;height:${barMaxH+32}px;padding-bottom:24px;position:relative;">
+        ${monthBudget>0?`<div style="position:absolute;left:0;right:0;bottom:${Math.round(Math.min(monthBudget,maxMonth)/maxMonth*barMaxH)+24}px;border-top:1px dashed rgba(255,255,255,0.15);pointer-events:none;"><span style="font-size:9px;color:var(--tx3);position:absolute;right:0;top:-13px;">budget</span></div>`:''}
+        ${months12.map((m,i) => {
+          const v   = monthTotals[i];
+          const h   = v > 0 ? Math.max(Math.round(v/maxMonth*barMaxH), 3) : 0;
+          const has = saved[m] || (m===curMonth && TX.some(t=>t.month===m));
+          const over= monthBudget>0 && v>monthBudget;
+          const col = !has ? 'var(--bg4)' : over ? '#ef4444' : 'var(--gem)';
+          const isCur = m === curMonth;
+          return `<div style="display:flex;flex-direction:column;align-items:center;gap:4px;justify-content:flex-end;height:100%;">
+            <div style="font-size:9px;font-family:'DM Mono',monospace;color:${v>0?'var(--tx2)':'var(--tx3)'};">${v>0?Math.round(v/1000)+'k':''}</div>
+            <div style="width:100%;height:${h}px;background:${col};border-radius:3px 3px 0 0;min-height:${has?3:0}px;${isCur?'outline:1px solid rgba(255,255,255,0.2);':''}" title="${MONTH_NAMES[i]}: ${kr(v)}"></div>
+            <div style="font-size:9px;color:${isCur?'var(--tx)':'var(--tx3)'};font-weight:${isCur?600:400}">${MONTH_NAMES[i]}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+
+  // Category table — rows = groups, cols = months
+  const hasAnyBud = items.some(t=>t.bud);
+  let tableHtml = '';
+  if (hasAnyBud) {
+    const activeCats = BUD_GROUPS.filter(g => groupTotals[g.k] > 0);
+    tableHtml = `
+      <div class="card" style="margin-bottom:20px;overflow-x:auto;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--tx3);font-weight:600;margin-bottom:14px;">Budgetkategori per månad</div>
+        <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:700px;">
+          <thead>
+            <tr>
+              <th style="text-align:left;padding:6px 10px 6px 0;color:var(--tx3);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--bd);">Kategori</th>
+              ${months12.map((_,i) => `<th style="text-align:right;padding:6px 6px;color:var(--tx3);font-weight:600;font-size:10px;border-bottom:1px solid var(--bd);">${MONTH_NAMES[i]}</th>`).join('')}
+              <th style="text-align:right;padding:6px 0 6px 6px;color:var(--tx3);font-weight:600;font-size:10px;border-bottom:1px solid var(--bd);">Totalt</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${activeCats.map(g => {
+              const rowTotal = groupTotals[g.k];
+              const annBudget = (budgets[g.k+suffix]||budgets[g.k]||0)*12;
+              const over = annBudget>0 && rowTotal>annBudget;
+              return `<tr>
+                <td style="padding:7px 10px 7px 0;border-bottom:1px solid var(--bd);white-space:nowrap;">
+                  <span style="display:flex;align-items:center;gap:6px;">${g.icon}<span style="color:var(--tx2)">${g.l}</span></span>
+                </td>
+                ${groupMonthData[g.k].map(v => `<td style="text-align:right;padding:7px 6px;border-bottom:1px solid var(--bd);font-family:'DM Mono',monospace;color:${v>0?'var(--tx)':'var(--tx3)'};">${v>0?Math.round(v/1000)+'k':'—'}</td>`).join('')}
+                <td style="text-align:right;padding:7px 0 7px 6px;border-bottom:1px solid var(--bd);font-family:'DM Mono',monospace;font-weight:600;color:${over?'#ef4444':'var(--tx)'};">${kr(rowTotal)}${over?` <span style="font-size:10px;color:#ef4444">(+${kr(rowTotal-annBudget)})</span>`:''}</td>
+              </tr>`;
+            }).join('')}
+            <tr>
+              <td style="padding:8px 10px 4px 0;font-weight:600;">Totalt</td>
+              ${monthTotals.map(v => `<td style="text-align:right;padding:8px 6px 4px;font-family:'DM Mono',monospace;font-weight:600;color:${v>0?'var(--tx)':'var(--tx3)'};">${v>0?Math.round(v/1000)+'k':'—'}</td>`).join('')}
+              <td style="text-align:right;padding:8px 0 4px 6px;font-family:'DM Mono',monospace;font-weight:700;">${kr(yearTotal)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>`;
+  }
+
+  // Top categories donut-style ranking
+  const rankHtml = activeCats => {
+    if (!activeCats || !activeCats.length) return '';
+    const top = BUD_GROUPS.filter(g=>groupTotals[g.k]>0).sort((a,b)=>groupTotals[b.k]-groupTotals[a.k]);
+    const maxVal2 = groupTotals[top[0].k] || 1;
+    return `<div class="card" style="margin-bottom:20px;">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--tx3);font-weight:600;margin-bottom:14px;">Fördelning per kategori</div>
+      ${top.map(g => {
+        const v = groupTotals[g.k];
+        const pct3 = Math.round(v/yearTotal*100);
+        const w = Math.round(v/maxVal2*100);
+        return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+          <div style="width:20px;text-align:center;font-size:14px;flex-shrink:0">${g.icon}</div>
+          <div style="width:100px;font-size:12px;color:var(--tx2);flex-shrink:0;">${g.l}</div>
+          <div style="flex:1;height:6px;background:var(--bg4);border-radius:99px;overflow:hidden;">
+            <div style="height:100%;width:${w}%;background:${g.color};border-radius:99px;"></div>
+          </div>
+          <div style="width:60px;text-align:right;font-family:'DM Mono',monospace;font-size:12px;flex-shrink:0">${kr(v)}</div>
+          <div style="width:30px;text-align:right;font-size:11px;color:var(--tx3);flex-shrink:0">${pct3}%</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  };
+
+  const activeGroups = BUD_GROUPS.filter(g=>groupTotals[g.k]>0);
+  c2.innerHTML = personHtml + kpiHtml + barHtml + (activeGroups.length ? rankHtml(activeGroups) : '') + tableHtml;
+}
+
+// ── LEARNED CATEGORIES ──
+function updateLearnedPanel() {
+  const keys = Object.keys(learnedCats);
+  const toggle = document.getElementById('learnedToggle');
+  const panel  = document.getElementById('learnedPanel');
+  const count  = document.getElementById('learnedCount');
+  if (!toggle) return;
+  if (keys.length === 0) { toggle.style.display='none'; if(panel) panel.style.display='none'; return; }
+  toggle.style.display='inline-flex';
+  if (count) count.textContent = keys.length;
+  const list = document.getElementById('learnedList');
+  if (!list) return;
+  list.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px;">
+    ${keys.map(mk => {
+      const budKey = learnedCats[mk];
+      const col = budColor(budKey);
+      const lbl = budLabel(budKey);
+      return `<div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg3);border:1px solid var(--bd2);border-radius:var(--rs);padding:7px 11px;font-size:12px;">
+        <div style="display:flex;align-items:center;gap:8px;overflow:hidden;">
+          <span style="font-family:'DM Mono',monospace;color:var(--tx2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${mk}</span>
+          <span style="color:var(--tx3)">→</span>
+          <span style="background:${col}22;color:${col};border:1px solid ${col}44;border-radius:99px;padding:1px 7px;white-space:nowrap;">${lbl}</span>
+        </div>
+        <button class="del" onclick="forgetLearned('${mk}')" style="flex-shrink:0;"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function toggleLearnedPanel() {
+  const panel = document.getElementById('learnedPanel');
+  const btn   = document.getElementById('learnedToggle');
+  if (!panel) return;
+  const show = panel.style.display === 'none';
+  panel.style.display = show ? 'block' : 'none';
+  btn.innerHTML = (show ? 'Dölj' : 'Visa') + ' inlärda kategorier (' + Object.keys(learnedCats).length + ')';
+  if (show) updateLearnedPanel();
+}
+
+function forgetLearned(mk) {
+  delete learnedCats[mk];
+  persistStorage();
+  updateLearnedPanel();
+  toast('Borttagen');
+}
+
+function clearLearned() {
+  if (!confirm('Ta bort alla inlärda kategorier?')) return;
+  learnedCats = {};
+  persistStorage();
+  updateLearnedPanel();
+  toast('Rensade alla inlärda kategorier');
+}
+
+// ── COLUMN WIDTHS ──
+const COL_DEFS = [
+  { key:'date', label:'Datum',        prop:'--col-date', min:60,  max:160, default:100, unit:'px' },
+  { key:'name', label:'Butik',        prop:'--col-name', min:100, max:600, default:280, unit:'px' },
+  { key:'amt',  label:'Belopp',       prop:'--col-amt',  min:70,  max:160, default:140, unit:'px' },
+  { key:'card', label:'Kortmedlem',   prop:'--col-card', min:60,  max:200, default:140, unit:'px' },
+  { key:'bud',  label:'Budget',       prop:'--col-bud',  min:100, max:300, default:190, unit:'px' },
+  { key:'cat',  label:'Delning',      prop:'--col-cat',  min:140, max:360, default:230, unit:'px' },
+];
+
+let colWidths = {}; // { key: px value }
+
+function loadColWidths() {
+  try {
+    const stored = localStorage.getItem('splitr_cols');
+    if (stored) colWidths = JSON.parse(stored);
+  } catch(e) {}
+  COL_DEFS.forEach(d => { if (!colWidths[d.key]) colWidths[d.key] = d.default; });
+  applyColWidths();
+}
+
+function applyColWidths() {
+  const root = document.documentElement;
+  COL_DEFS.forEach(d => {
+    root.style.setProperty(d.prop, colWidths[d.key] + 'px');
+  });
+}
+
+function saveColWidths() {
+  try { localStorage.setItem('splitr_cols', JSON.stringify(colWidths)); } catch(e) {}
+}
+
+function resetColWidths() {
+  COL_DEFS.forEach(d => colWidths[d.key] = d.default);
+  applyColWidths(); saveColWidths(); renderColSliders();
+  toast('Kolumner återställda');
+}
+
+function toggleColPanel() {
+  const p = document.getElementById('colPanel');
+  if (!p) return;
+  const show = p.style.display === 'none';
+  p.style.display = show ? 'block' : 'none';
+  if (show) renderColSliders();
+}
+
+function renderColSliders() {
+  const el = document.getElementById('colSliders');
+  if (!el) return;
+  el.innerHTML = COL_DEFS.map(d => `
+    <div class="col-slider-wrap">
+      <label>${d.label}</label>
+      <input type="range" min="${d.min}" max="${d.max}" value="${colWidths[d.key]}"
+        oninput="colWidths['${d.key}']=parseInt(this.value);applyColWidths();saveColWidths();document.getElementById('colval-${d.key}').textContent=this.value+'px'">
+      <span id="colval-${d.key}">${colWidths[d.key]}px</span>
+    </div>`).join('');
+}
+
+// ── INIT ──
+document.getElementById('mDate').value = new Date().toISOString().slice(0,10);
+
+// Default month picker to previous month (Amex faktura = förra månaden)
+const _now = new Date();
+const _prevMonth = new Date(_now.getFullYear(), _now.getMonth() - 1, 1);
+document.getElementById('monthPicker').value =
+  `${_prevMonth.getFullYear()}-${String(_prevMonth.getMonth()+1).padStart(2,'0')}`;
+
+loadColWidths();
+loadStorage();
+</script>
+</body>
+</html>
