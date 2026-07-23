@@ -95,6 +95,10 @@ input[type=month]::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:po
 .del{width:28px;height:28px;border-radius:6px;background:transparent;border:1px solid transparent;color:var(--tx3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
 .del svg{width:13px;height:13px;}
 .del:hover{background:rgba(239,68,68,.12);color:#ef4444;border-color:rgba(239,68,68,.25);}
+.splitbtn{width:28px;height:28px;border-radius:6px;background:transparent;border:1px solid transparent;color:var(--tx3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.splitbtn svg{width:14px;height:14px;}
+.splitbtn:hover{background:var(--ao-bg);color:var(--ao);border-color:var(--ao-bd);}
+.splitbtn.is-split{color:var(--ao);}
 .fbar{display:flex;gap:4px;flex-wrap:wrap;}
 .fp{padding:5px 13px;border-radius:99px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--bd2);background:transparent;color:var(--tx2);font-family:'DM Sans',sans-serif;transition:all .12s;}
 .fp:hover{border-color:var(--bd3);color:var(--tx);}
@@ -193,9 +197,9 @@ input[type=month]::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:po
 :root {
   --col-chk:20px; --col-date:100px; --col-name:1fr;
   --col-amt:140px; --col-card:140px; --col-bud:190px;
-  --col-cat:230px; --col-note:28px; --col-del:28px;
+  --col-cat:230px; --col-split:28px; --col-note:28px; --col-del:28px;
 }
-.with-bud{grid-template-columns:var(--col-chk) var(--col-date) var(--col-name) var(--col-amt) var(--col-card) var(--col-bud) var(--col-cat) var(--col-note) var(--col-del);}
+.with-bud{grid-template-columns:var(--col-chk) var(--col-date) var(--col-name) var(--col-amt) var(--col-card) var(--col-bud) var(--col-cat) var(--col-split) var(--col-note) var(--col-del);}
 .no-bud{grid-template-columns:90px 1fr 100px 120px;}
 
 /* Resize handle */
@@ -501,6 +505,30 @@ input[type=month]::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:po
   </div>
 </div>
 
+<!-- DELA UPP-MODAL -->
+<div class="modal-bg" id="splitModal" style="display:none;" onclick="if(event.target===this)closeSplit()">
+  <div class="modal" style="max-width:660px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+      <h2 style="margin:0">🔀 Dela upp post</h2>
+      <button class="btn btn-sm" onclick="closeSplit()">Stäng</button>
+    </div>
+    <div id="splitHead" style="font-size:13px;color:var(--tx2);margin-bottom:6px;"></div>
+    <p style="font-size:12px;color:var(--tx3);margin-bottom:14px;">Dela upp beloppet på flera delnings- och budgetkategorier — t.ex. en del gemensamt och en del privat. Delarna måste summera till totalbeloppet.</p>
+    <div style="display:grid;grid-template-columns:110px 1fr 1fr 28px;gap:8px;margin-bottom:6px;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--tx3);font-weight:600;">
+      <span>Belopp</span><span>Delning</span><span>Budget</span><span></span>
+    </div>
+    <div id="splitParts"></div>
+    <button class="btn btn-sm" onclick="addSplitPart()" style="margin-top:4px;">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+      Lägg till del
+    </button>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;padding-top:12px;border-top:1px solid var(--bd2);">
+      <div id="splitRemaining" style="font-size:13px;font-family:'DM Mono',monospace;"></div>
+      <button class="btn btn-p" id="splitSaveBtn" onclick="saveSplit()">Spara uppdelning</button>
+    </div>
+  </div>
+</div>
+
 </main>
 </div>
 <div class="toast" id="toast"></div>
@@ -581,8 +609,6 @@ function migrateData() {
     if (!bud) return bud;
     if (validKeys.has(bud)) return bud;             // already valid
     if (BUD_MIGRATIONS[bud]) return BUD_MIGRATIONS[bud]; // known migration
-    // Try matching on parent key (e.g. old flat 'mat' -> keep as 'mat' which is still valid)
-    if (validKeys.has(bud)) return bud;
     // Try stripping prefix — 'old.sub' -> find matching sub label
     const sub = bud.split('.').pop();
     const match = BUD_CATS.find(b => b.k.endsWith('.'+sub) || b.l.toLowerCase().includes(sub));
@@ -614,9 +640,16 @@ function migrateData() {
 
 async function loadStorage() {
   try {
-    const res = await window.storage.get('splitr_data');
-    if (res && res.value) {
-      const data = JSON.parse(res.value);
+    // localStorage funkar överallt (GitHub Pages, lokal fil, etc.).
+    // Faller tillbaka på window.storage om den finns (Claude Artifact-miljön).
+    let raw = null;
+    try { raw = localStorage.getItem('splitr_data'); } catch(e) {}
+    if (!raw && window.storage && window.storage.get) {
+      const res = await window.storage.get('splitr_data');
+      if (res && res.value) raw = res.value;
+    }
+    if (raw) {
+      const data = JSON.parse(raw);
       saved       = data.saved       || {};
       TX          = data.tx          || [];
       budgets     = data.budgets     || {};
@@ -630,9 +663,10 @@ async function loadStorage() {
 }
 
 async function persistStorage() {
-  try {
-    await window.storage.set('splitr_data', JSON.stringify({ saved, tx: TX, budgets, colMap, learnedCats }));
-  } catch(e) {}
+  const payload = JSON.stringify({ saved, tx: TX, budgets, colMap, learnedCats });
+  try { localStorage.setItem('splitr_data', payload); } catch(e) {}
+  // Skriv även till window.storage om den finns (bakåtkompatibilitet)
+  try { if (window.storage && window.storage.set) await window.storage.set('splitr_data', payload); } catch(e) {}
 }
 
 // ── HELPERS ──
@@ -642,6 +676,8 @@ const gm  = () => mp.value;
 const mi  = () => TX.filter(t => t.month === gm());
 const kr  = n  => Math.round(n).toLocaleString('sv-SE') + ' kr';
 const fd  = s  => { if (!s) return '—'; const d = new Date(s); return isNaN(d) ? s : d.toLocaleDateString('sv-SE', {day:'2-digit', month:'short'}); };
+// Belopp med tecken: krediter/återbetalningar (src==='credit') räknas som negativa i alla summeringar
+const amtOf = t => (t.src === 'credit' ? -t.amt : t.amt);
 
 // Parse date strings from Amex and other sources into YYYY-MM-DD
 function parseAmexDate(raw) {
@@ -649,12 +685,14 @@ function parseAmexDate(raw) {
   raw = raw.toString().trim();
   // Already ISO: 2026-03-01
   if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
-  // MM/DD/YYYY (Amex standard)
-  const mdy = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (mdy) return `${mdy[3]}-${mdy[1].padStart(2,'0')}-${mdy[2].padStart(2,'0')}`;
-  // DD/MM/YYYY
-  const dmy = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (dmy && parseInt(dmy[1]) > 12) return `${dmy[3]}-${dmy[2].padStart(2,'0')}-${dmy[1].padStart(2,'0')}`;
+  // Snedstreck-format: MM/DD/YYYY (Amex standard) eller DD/MM/YYYY om första talet > 12
+  const slash = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (slash) {
+    const a = parseInt(slash[1]), b = parseInt(slash[2]);
+    // a > 12 kan bara vara en dag → tolka som DD/MM/YYYY
+    if (a > 12) return `${slash[3]}-${slash[2].padStart(2,'0')}-${slash[1].padStart(2,'0')}`;
+    return `${slash[3]}-${slash[1].padStart(2,'0')}-${slash[2].padStart(2,'0')}`;
+  }
   // DD.MM.YYYY
   const dmy2 = raw.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
   if (dmy2) return `${dmy2[3]}-${dmy2[2].padStart(2,'0')}-${dmy2[1].padStart(2,'0')}`;
@@ -912,9 +950,10 @@ function applyBulk(){
       if(bud){t.bud=bud;learnedCats[merchantKey(t.merch)]=bud;}
     }
   });
+  const n=selectedIds.size;
   selectedIds.clear();
   renderList();badge();updateKatSub();persistStorage();
-  toast('Tillämpat på '+selectedIds.size+' poster');
+  toast('Tillämpat på '+n+' poster');
 }
 
 // Swish modal
@@ -922,10 +961,10 @@ function showSwish(){
   const items=mi();
   const month=gm();
   const mn=new Date(month+'-01').toLocaleString('sv-SE',{month:'long',year:'numeric'});
-  const gem=items.filter(t=>t.cat==='gemensam').reduce((a,t)=>a+t.amt,0);
-  const akPriv=items.filter(t=>t.cat==='ak').reduce((a,t)=>a+t.amt,0);
-  const oscOut=items.filter(t=>t.cat==='oscar-out').reduce((a,t)=>a+t.amt,0);
-  const akOut=items.filter(t=>t.cat==='ak-out').reduce((a,t)=>a+t.amt,0);
+  const gem=items.filter(t=>t.cat==='gemensam').reduce((a,t)=>a+amtOf(t),0);
+  const akPriv=items.filter(t=>t.cat==='ak').reduce((a,t)=>a+amtOf(t),0);
+  const oscOut=items.filter(t=>t.cat==='oscar-out').reduce((a,t)=>a+amtOf(t),0);
+  const akOut=items.filter(t=>t.cat==='ak-out').reduce((a,t)=>a+amtOf(t),0);
   const netto=Math.round(gem/2+akPriv+oscOut/2-akOut/2);
   const lines=[];
   lines.push('Hej! Här är utläggstämningen för '+mn+' 🧾');
@@ -951,6 +990,79 @@ function copySwish(){
       window.getSelection().removeAllRanges();window.getSelection().addRange(r);
       document.execCommand('copy');toast('Kopierat! ✓');
     });
+}
+
+// ── DELA UPP POST ──
+let splitId=null, splitParts=[];
+const DELNING=[
+  {k:'gemensam',l:'Gemensam'},{k:'oscar',l:'Oscar privat'},{k:'ak',l:'AK privat'},
+  {k:'oscar-out',l:'Oscar la ut (gem)'},{k:'ak-out',l:'AK la ut (gem)'},
+];
+function budOptionsHtml(selected){
+  return '<option value="">— ingen budget —</option>'+BUD_GROUPS.map(g=>
+    `<optgroup label="${g.icon} ${g.l}"><option value="${g.k}"${selected===g.k?' selected':''}>${g.l} (allmänt)</option>${g.subs.map(s=>`<option value="${s.k}"${selected===s.k?' selected':''}>${s.l}</option>`).join('')}</optgroup>`
+  ).join('');
+}
+function openSplit(id){
+  const t=TX.find(x=>x.id===id); if(!t) return;
+  splitId=id;
+  splitParts=[
+    {amt:t.amt, cat:t.cat||'gemensam', bud:t.bud||''},
+    {amt:0,     cat:(t.cat==='gemensam'||!t.cat)?'oscar':'gemensam', bud:''},
+  ];
+  document.getElementById('splitHead').innerHTML=`<strong>${t.merch}</strong> · ${fd(t.date)} · totalt <span style="font-family:'DM Mono',monospace;color:var(--tx)">${kr(t.amt)}</span>`;
+  renderSplitParts();
+  document.getElementById('splitModal').style.display='flex';
+}
+function closeSplit(){document.getElementById('splitModal').style.display='none';splitId=null;splitParts=[];}
+function splitTotal(){const t=TX.find(x=>x.id===splitId);return t?t.amt:0;}
+function splitSum(){return splitParts.reduce((a,p)=>a+(parseFloat(p.amt)||0),0);}
+function renderSplitParts(){
+  const el=document.getElementById('splitParts'); if(!el) return;
+  el.innerHTML=splitParts.map((p,i)=>`
+    <div style="display:grid;grid-template-columns:110px 1fr 1fr 28px;gap:8px;align-items:center;margin-bottom:8px;">
+      <input type="number" step="0.01" min="0" value="${p.amt}" oninput="splitParts[${i}].amt=this.value;refreshSplitRemaining()" style="font-family:'DM Mono',monospace;">
+      <select onchange="splitParts[${i}].cat=this.value">${DELNING.map(d=>`<option value="${d.k}"${p.cat===d.k?' selected':''}>${d.l}</option>`).join('')}</select>
+      <select onchange="splitParts[${i}].bud=this.value">${budOptionsHtml(p.bud)}</select>
+      <button class="del" onclick="removeSplitPart(${i})" ${splitParts.length<=2?'style="visibility:hidden"':''}><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+    </div>`).join('');
+  refreshSplitRemaining();
+}
+function refreshSplitRemaining(){
+  const rem=Math.round((splitTotal()-splitSum())*100)/100;
+  const el=document.getElementById('splitRemaining');
+  const ok=Math.abs(rem)<0.01;
+  if(el){
+    el.textContent=ok?'✓ Fördelat fullt ut':`Kvar att fördela: ${kr(rem)}`;
+    el.style.color=ok?'var(--gem)':(rem<0?'#ef4444':'var(--tx2)');
+  }
+  const btn=document.getElementById('splitSaveBtn');
+  if(btn) btn.disabled=!ok;
+}
+function addSplitPart(){
+  const rem=Math.round((splitTotal()-splitSum())*100)/100;
+  splitParts.push({amt:rem>0?rem:0,cat:'gemensam',bud:''});
+  renderSplitParts();
+}
+function removeSplitPart(i){splitParts.splice(i,1);renderSplitParts();}
+function saveSplit(){
+  const t=TX.find(x=>x.id===splitId); if(!t) return;
+  const parts=splitParts.map(p=>({...p,amt:parseFloat(p.amt)||0})).filter(p=>p.amt>0);
+  if(parts.length<2){toast('Ange minst två delar med belopp');return;}
+  const sum=parts.reduce((a,p)=>a+p.amt,0);
+  if(Math.abs(sum-t.amt)>=0.01){toast('Delarna måste summera till '+kr(t.amt));return;}
+  const group=t.splitGroup||t.id;
+  const children=parts.map((p,i)=>({
+    id:Date.now()+i, date:t.date, merch:t.merch, amt:p.amt, card:t.card,
+    cat:p.cat, bud:p.bud||null, src:t.src, month:t.month, note:t.note||'',
+    split:true, splitGroup:group
+  }));
+  children.forEach(c=>{ if(c.bud) learnedCats[merchantKey(c.merch)]=c.bud; });
+  const idx=TX.findIndex(x=>x.id===t.id);
+  TX.splice(idx,1,...children);
+  closeSplit();
+  renderList();badge();updateKatSub();updateLearnedPanel();persistStorage();
+  toast('Posten delades i '+children.length+' delar');
 }
 
 function setFilter(f) {
@@ -1013,7 +1125,7 @@ function renderList(){
   el.innerHTML=`<div class="txw">
     <div class="txh with-bud">
       <input type="checkbox" class="chk" ${allSelected?'checked':''} onchange="${allSelected?'clearSelection()':'selectAll()'}" title="Markera/avmarkera alla">
-      <span>Datum</span><span>Butik</span><span>Belopp</span><span>Kortmedlem</span><span>Budget</span><span>Delning</span><span></span><span></span>
+      <span>Datum</span><span>Butik</span><span>Belopp</span><span>Kortmedlem</span><span>Budget</span><span>Delning</span><span></span><span></span><span></span>
     </div>
     ${items.map(t=>{
       const isSel=selectedIds.has(t.id);
@@ -1024,11 +1136,12 @@ function renderList(){
       return `<div class="txr with-bud${t.src==='manual'?' manual':''}${isSel?' selected':''}">
         <input type="checkbox" class="chk" ${isSel?'checked':''} onchange="toggleSelect(${t.id})">
         <div class="txdate">${fd(t.date)}</div>
-        <div class="txname" title="${t.merch}">${t.merch}${t.src==='manual'?'<span class="tagm" style="margin-left:4px">manuell</span>':''}${isCredit?'<span class="credit-tag" style="margin-left:4px">kredit</span>':''}${hasSuggestion?'<span class="suggestion-chip" style="margin-left:4px" title="Auto-kategoriserad">✨</span>':''}${hasNote?`<br><span style="font-size:11px;color:var(--tx2)">💬 ${t.note}</span>`:''}</div>
+        <div class="txname" title="${t.merch}">${t.merch}${t.src==='manual'?'<span class="tagm" style="margin-left:4px">manuell</span>':''}${t.split?'<span class="tagm" style="margin-left:4px;background:var(--ao-bg);color:var(--ao)">del</span>':''}${isCredit?'<span class="credit-tag" style="margin-left:4px">kredit</span>':''}${hasSuggestion?'<span class="suggestion-chip" style="margin-left:4px" title="Auto-kategoriserad">✨</span>':''}${hasNote?`<br><span style="font-size:11px;color:var(--tx2)">💬 ${t.note}</span>`:''}</div>
         <div class="txamt" style="color:${isCredit?'var(--gem)':'inherit'}">${isCredit?'−':''}${kr(t.amt)}</div>
         <div class="txcard">${t.card||'—'}</div>
         <div>${budSelectH(t)}</div>
         <div class="pills">${pillsH(t)}</div>
+        <button class="splitbtn${t.split?' is-split':''}" onclick="openSplit(${t.id})" title="Dela upp posten på flera kategorier"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 4v4a4 4 0 004 4h12m0 0l-4-4m4 4l-4 4M4 20v-4"/></svg></button>
         <button class="comment-btn ${hasNote?'has-comment':''}" onclick="toggleComment(${t.id})" title="Kommentar">💬</button>
         <button class="del" onclick="delRow(${t.id})"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
       </div>
@@ -1049,7 +1162,7 @@ function renderSum(){
   const items=mi(), month=gm();
   const mn=new Date(month+'-01').toLocaleString('sv-SE',{month:'long',year:'numeric'});
   document.getElementById('sumSub').textContent=mn.charAt(0).toUpperCase()+mn.slice(1);
-  const s=f=>items.filter(f).reduce((a,t)=>a+t.amt,0);
+  const s=f=>items.filter(f).reduce((a,t)=>a+amtOf(t),0);
   const amexTot=s(t=>t.src==='import');
   const gem=s(t=>t.cat==='gemensam');
   const oscPriv=s(t=>t.cat==='oscar');
@@ -1340,7 +1453,7 @@ function saveBudgetSettings() {
 async function saveMonth() {
   const month=gm(), items=mi();
   if(!items.length){toast('Inga transaktioner att spara');return;}
-  saved[month]=items;
+  saved[month]=items.map(t=>({...t})); // djupkopia så senare redigeringar inte muterar historiken
   await persistStorage();
   toast('Månad sparad ✓');
 }
@@ -1352,10 +1465,10 @@ function renderHist() {
   c.innerHTML=keys.map(month=>{
     const its=saved[month];
     const amexTot=its.filter(t=>t.src==='import').reduce((a,t)=>a+t.amt,0);
-    const gem=its.filter(t=>t.cat==='gemensam').reduce((a,t)=>a+t.amt,0);
-    const akPriv=its.filter(t=>t.cat==='ak').reduce((a,t)=>a+t.amt,0);
-    const oscOut=its.filter(t=>t.cat==='oscar-out').reduce((a,t)=>a+t.amt,0);
-    const akOut=its.filter(t=>t.cat==='ak-out').reduce((a,t)=>a+t.amt,0);
+    const gem=its.filter(t=>t.cat==='gemensam').reduce((a,t)=>a+amtOf(t),0);
+    const akPriv=its.filter(t=>t.cat==='ak').reduce((a,t)=>a+amtOf(t),0);
+    const oscOut=its.filter(t=>t.cat==='oscar-out').reduce((a,t)=>a+amtOf(t),0);
+    const akOut=its.filter(t=>t.cat==='ak-out').reduce((a,t)=>a+amtOf(t),0);
     const netto=Math.round(gem/2+akPriv+oscOut/2-akOut/2);
     const mn=new Date(month+'-01').toLocaleString('sv-SE',{month:'long',year:'numeric'});
     const ns=netto>0?`AK betalar ${kr(netto)}`:netto<0?`Oscar betalar ${kr(Math.abs(netto))}`:'Jämna';
