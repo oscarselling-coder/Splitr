@@ -513,9 +513,17 @@ input[type=month]::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:po
       <button class="btn btn-sm" onclick="closeSplit()">Stäng</button>
     </div>
     <div id="splitHead" style="font-size:13px;color:var(--tx2);margin-bottom:6px;"></div>
-    <p style="font-size:12px;color:var(--tx3);margin-bottom:14px;">Dela upp beloppet på flera delnings- och budgetkategorier — t.ex. en del gemensamt och en del privat. Delarna måste summera till totalbeloppet.</p>
+    <p style="font-size:12px;color:var(--tx3);margin-bottom:12px;">Dela upp posten på flera delnings- och budgetkategorier — t.ex. en del gemensamt och en del privat. Ange delarna i kronor eller i procent.</p>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+      <span class="fl" style="margin:0">Fördela efter</span>
+      <div style="display:flex;gap:0;background:var(--bg2);border:1px solid var(--bd2);border-radius:var(--rs);overflow:hidden;">
+        <button id="splitModeKr"  onclick="setSplitMode('kr')"  style="padding:6px 16px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;">Belopp (kr)</button>
+        <button id="splitModePct" onclick="setSplitMode('pct')" style="padding:6px 16px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;">Procent (%)</button>
+      </div>
+      <button class="btn btn-sm" onclick="splitEvenly()" title="Fördela lika mellan delarna">50/50</button>
+    </div>
     <div style="display:grid;grid-template-columns:110px 1fr 1fr 28px;gap:8px;margin-bottom:6px;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--tx3);font-weight:600;">
-      <span>Belopp</span><span>Delning</span><span>Budget</span><span></span>
+      <span id="splitValHead">Belopp</span><span>Delning</span><span>Budget</span><span></span>
     </div>
     <div id="splitParts"></div>
     <button class="btn btn-sm" onclick="addSplitPart()" style="margin-top:4px;">
@@ -1003,12 +1011,19 @@ function budOptionsHtml(selected){
     `<optgroup label="${g.icon} ${g.l}"><option value="${g.k}"${selected===g.k?' selected':''}>${g.l} (allmänt)</option>${g.subs.map(s=>`<option value="${s.k}"${selected===s.k?' selected':''}>${s.l}</option>`).join('')}</optgroup>`
   ).join('');
 }
+// splitMode styr bara inmatningen — det som sparas är alltid kronor,
+// så formatet är oförändrat och gamla exporter påverkas inte.
+let splitMode='kr'; // 'kr' | 'pct'
+const r2=n=>Math.round(n*100)/100;
+const r4=n=>Math.round(n*10000)/10000; // procent lagras med fler decimaler så kr↔% blir exakt
+
 function openSplit(id){
   const t=TX.find(x=>x.id===id); if(!t) return;
   splitId=id;
+  splitMode='kr';
   splitParts=[
-    {amt:t.amt, cat:t.cat||'gemensam', bud:t.bud||''},
-    {amt:0,     cat:(t.cat==='gemensam'||!t.cat)?'oscar':'gemensam', bud:''},
+    {val:t.amt, cat:t.cat||'gemensam', bud:t.bud||''},
+    {val:0,     cat:(t.cat==='gemensam'||!t.cat)?'oscar':'gemensam', bud:''},
   ];
   document.getElementById('splitHead').innerHTML=`<strong>${t.merch}</strong> · ${fd(t.date)} · totalt <span style="font-family:'DM Mono',monospace;color:var(--tx)">${kr(t.amt)}</span>`;
   renderSplitParts();
@@ -1016,41 +1031,106 @@ function openSplit(id){
 }
 function closeSplit(){document.getElementById('splitModal').style.display='none';splitId=null;splitParts=[];}
 function splitTotal(){const t=TX.find(x=>x.id===splitId);return t?t.amt:0;}
-function splitSum(){return splitParts.reduce((a,p)=>a+(parseFloat(p.amt)||0),0);}
+function splitSum(){return splitParts.reduce((a,p)=>a+(parseFloat(p.val)||0),0);}
+// Mål att fördela: totalbeloppet i kr-läge, 100 i procentläge
+function splitGoal(){return splitMode==='pct'?100:splitTotal();}
+
+// Räkna om delarna till kronor. I procentläge läggs öresresten på den största delen
+// så att summan alltid blir exakt totalbeloppet.
+function splitAmounts(){
+  const total=splitTotal();
+  const nums=splitParts.map(p=>parseFloat(p.val)||0);
+  if(splitMode==='kr') return nums.map(r2);
+  const amts=nums.map(v=>r2(total*v/100));
+  let bigIdx=-1;
+  amts.forEach((v,i)=>{ if(v>0&&(bigIdx<0||v>amts[bigIdx])) bigIdx=i; });
+  if(bigIdx>=0){
+    const rest=amts.reduce((a,v,i)=>i===bigIdx?a:a+v,0);
+    amts[bigIdx]=r2(total-rest);
+  }
+  return amts;
+}
+
+function setSplitMode(m){
+  if(m===splitMode){renderSplitParts();return;}
+  const total=splitTotal();
+  splitParts=splitParts.map(p=>{
+    const v=parseFloat(p.val)||0;
+    if(m==='pct') return {...p, val: total>0?r4(v/total*100):0};
+    return {...p, val: r2(total*v/100)};
+  });
+  splitMode=m;
+  renderSplitParts();
+}
+
+function splitEvenly(){
+  const n=splitParts.length; if(!n) return;
+  const goal=splitGoal();
+  const each=r2(goal/n);
+  splitParts=splitParts.map(p=>({...p,val:each}));
+  // lägg resten på första delen så summan stämmer exakt
+  const diff=r2(goal-each*n);
+  if(diff!==0) splitParts[0].val=r2(each+diff);
+  renderSplitParts();
+}
+
 function renderSplitParts(){
   const el=document.getElementById('splitParts'); if(!el) return;
-  el.innerHTML=splitParts.map((p,i)=>`
-    <div style="display:grid;grid-template-columns:110px 1fr 1fr 28px;gap:8px;align-items:center;margin-bottom:8px;">
-      <input type="number" step="0.01" min="0" value="${p.amt}" oninput="splitParts[${i}].amt=this.value;refreshSplitRemaining()" style="font-family:'DM Mono',monospace;">
+  const pct=splitMode==='pct', total=splitTotal();
+  const head=document.getElementById('splitValHead');
+  if(head) head.textContent=pct?'Procent':'Belopp';
+  // markera aktivt läge
+  [['splitModeKr','kr'],['splitModePct','pct']].forEach(([id,m])=>{
+    const b=document.getElementById(id); if(!b) return;
+    const on=splitMode===m;
+    b.style.background=on?'var(--bg4)':'transparent';
+    b.style.color=on?'var(--ao)':'var(--tx2)';
+    b.style.fontWeight=on?600:400;
+  });
+  el.innerHTML=splitParts.map((p,i)=>{
+    const v=parseFloat(p.val)||0;
+    const suffix=pct?`% <span style="color:var(--tx3)">≈ ${kr(total*v/100)}</span>`:'kr';
+    return `
+    <div style="display:grid;grid-template-columns:170px 1fr 1fr 28px;gap:8px;align-items:center;margin-bottom:8px;">
+      <div style="display:flex;align-items:center;gap:5px;">
+        <input type="number" step="0.01" min="0" value="${p.val}" oninput="splitParts[${i}].val=this.value;refreshSplitRemaining()" style="font-family:'DM Mono',monospace;">
+        <span style="font-size:11px;color:var(--tx2);white-space:nowrap;">${suffix}</span>
+      </div>
       <select onchange="splitParts[${i}].cat=this.value">${DELNING.map(d=>`<option value="${d.k}"${p.cat===d.k?' selected':''}>${d.l}</option>`).join('')}</select>
       <select onchange="splitParts[${i}].bud=this.value">${budOptionsHtml(p.bud)}</select>
       <button class="del" onclick="removeSplitPart(${i})" ${splitParts.length<=2?'style="visibility:hidden"':''}><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
-    </div>`).join('');
+    </div>`;}).join('');
   refreshSplitRemaining();
 }
 function refreshSplitRemaining(){
-  const rem=Math.round((splitTotal()-splitSum())*100)/100;
+  const pct=splitMode==='pct';
+  const rem=r2(splitGoal()-splitSum());
   const el=document.getElementById('splitRemaining');
   const ok=Math.abs(rem)<0.01;
   if(el){
-    el.textContent=ok?'✓ Fördelat fullt ut':`Kvar att fördela: ${kr(rem)}`;
+    const remTxt=pct?(Math.round(rem*100)/100)+' %':kr(rem);
+    el.textContent=ok?'✓ Fördelat fullt ut':`Kvar att fördela: ${remTxt}`;
     el.style.color=ok?'var(--gem)':(rem<0?'#ef4444':'var(--tx2)');
   }
   const btn=document.getElementById('splitSaveBtn');
   if(btn) btn.disabled=!ok;
 }
 function addSplitPart(){
-  const rem=Math.round((splitTotal()-splitSum())*100)/100;
-  splitParts.push({amt:rem>0?rem:0,cat:'gemensam',bud:''});
+  const rem=r2(splitGoal()-splitSum());
+  splitParts.push({val:rem>0?rem:0,cat:'gemensam',bud:''});
   renderSplitParts();
 }
 function removeSplitPart(i){splitParts.splice(i,1);renderSplitParts();}
 function saveSplit(){
   const t=TX.find(x=>x.id===splitId); if(!t) return;
-  const parts=splitParts.map(p=>({...p,amt:parseFloat(p.amt)||0})).filter(p=>p.amt>0);
+  const amts=splitAmounts();
+  const parts=splitParts.map((p,i)=>({...p,amt:amts[i]})).filter(p=>p.amt>0);
   if(parts.length<2){toast('Ange minst två delar med belopp');return;}
   const sum=parts.reduce((a,p)=>a+p.amt,0);
-  if(Math.abs(sum-t.amt)>=0.01){toast('Delarna måste summera till '+kr(t.amt));return;}
+  if(Math.abs(sum-t.amt)>=0.01){
+    toast(splitMode==='pct'?'Delarna måste summera till 100 %':'Delarna måste summera till '+kr(t.amt));
+    return;
+  }
   const group=t.splitGroup||t.id;
   const children=parts.map((p,i)=>({
     id:Date.now()+i, date:t.date, merch:t.merch, amt:p.amt, card:t.card,
