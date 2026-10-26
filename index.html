@@ -81,9 +81,11 @@ input[type=month]::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:po
 .txamt{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;text-align:left;}
 .txcard{font-size:12px;color:var(--tx2);}
 .txbud{font-size:12px;}
-.pills{display:flex;gap:3px;flex-wrap:wrap;}
-.pill{padding:3px 9px;border-radius:99px;font-size:11px;font-weight:500;cursor:pointer;border:1px solid var(--bd2);background:transparent;color:var(--tx3);font-family:'DM Sans',sans-serif;transition:all .12s;white-space:nowrap;}
-.pill:hover{border-color:var(--bd3);color:var(--tx2);}
+.pills{display:flex;gap:5px;flex-wrap:wrap;}
+.pill{padding:7px 12px;min-height:32px;border-radius:8px;font-size:12.5px;font-weight:500;cursor:pointer;border:1px solid var(--bd2);background:transparent;color:var(--tx2);font-family:'DM Sans',sans-serif;transition:all .12s;white-space:nowrap;}
+.pill:hover{border-color:var(--bd3);color:var(--tx);background:var(--bg4);}
+.pill:active{transform:scale(.96);}
+.pill.pg,.pill.po,.pill.pa,.pill.poo,.pill.pao{font-weight:600;}
 .pill.pg{background:var(--gem-bg);color:var(--gem);border-color:var(--gem-bd);}
 .pill.po{background:var(--osc-bg);color:var(--osc);border-color:var(--osc-bd);}
 .pill.pa{background:var(--ak-bg);color:var(--ak);border-color:var(--ak-bd);}
@@ -198,7 +200,7 @@ input[type=month]::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:po
 :root {
   --col-chk:20px; --col-date:100px; --col-name:1fr;
   --col-amt:140px; --col-card:140px; --col-bud:190px;
-  --col-cat:230px; --col-split:28px; --col-note:28px; --col-del:28px;
+  --col-cat:300px; --col-split:28px; --col-note:28px; --col-del:28px;
 }
 .with-bud{grid-template-columns:var(--col-chk) var(--col-date) var(--col-name) var(--col-amt) var(--col-card) var(--col-bud) var(--col-cat) var(--col-split) var(--col-note) var(--col-del);}
 .no-bud{grid-template-columns:90px 1fr 100px 120px;}
@@ -335,14 +337,15 @@ input[type=month]::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:po
           <div class="field"><label class="fl">Betalt av</label>
             <select id="mPayer"><option value="Oscar">Oscar</option><option value="Annakarin">Annakarin</option><option value="Kontant">Kontant</option><option value="Annat kort">Annat kort</option></select>
           </div>
-          <div class="field"><label class="fl">Delningskategori</label>
-            <select id="mCat">
+          <div class="field"><label class="fl">Delning</label>
+            <select id="mCat" style="display:none">
               <option value="gemensam">Gemensam</option>
-              <option value="oscar">Oscar — privat</option>
-              <option value="ak">Annakarin — privat</option>
-              <option value="oscar-out">Oscar la ut (gem)</option>
               <option value="ak-out">AK la ut (gem)</option>
             </select>
+            <div class="pills" id="mCatBtns">
+              <button type="button" class="pill" data-k="gemensam" onclick="setMCat('gemensam')">Gemensam</button>
+              <button type="button" class="pill" data-k="ak-out" onclick="setMCat('ak-out')">AK la ut</button>
+            </div>
           </div>
         </div>
         <div class="field"><label class="fl">Budgetkategori</label>
@@ -1299,7 +1302,15 @@ function budSelectH(t) {
   return `<select style="${sty}font-size:11px;padding:3px 7px;border-radius:99px;width:100%;border:1px solid ${col?col+'44':'var(--bd2)'};" onchange="setBud(${t.id},this.value)">${opts}</select>`;
 }
 
-function pillsH(t){return CATS.map(d=>`<button class="pill ${t.cat===d.k?d.cls:''}" onclick="setCat(${t.id},'${d.k}')">${d.l}</button>`).join('');}
+// Importerade Amex-rader: Gem/Oscar/AK. Manuella poster (andra kort): Gem eller AK la ut.
+// Har en rad redan ett annat val visas det också så att det går att se och ändra.
+function pillsH(t){
+  const manual=t.src==='manual';
+  const keys=manual?['gemensam','ak-out']:['gemensam','oscar','ak'];
+  if(t.cat&&!keys.includes(t.cat)) keys.push(t.cat);
+  return keys.map(k=>CATS.find(c=>c.k===k)).filter(Boolean).map(d0=>{const d=(manual&&d0.k==='ak-out')?{...d0,l:'AK la ut'}:d0;return pillBtn(t,d);}).join('');
+}
+function pillBtn(t,d){return `<button class="pill ${t.cat===d.k?d.cls:''}" title="${DELNING.find(x=>x.k===d.k).l}" onclick="setCat(${t.id},'${d.k}')">${d.l}</button>`;}
 
 function renderList(){
   const q=(document.getElementById('txSearch')||{}).value||'';
@@ -1982,7 +1993,7 @@ const COL_DEFS = [
   { key:'amt',  label:'Belopp',       prop:'--col-amt',  min:70,  max:160, default:140, unit:'px' },
   { key:'card', label:'Kortmedlem',   prop:'--col-card', min:60,  max:200, default:140, unit:'px' },
   { key:'bud',  label:'Budget',       prop:'--col-bud',  min:100, max:300, default:190, unit:'px' },
-  { key:'cat',  label:'Delning',      prop:'--col-cat',  min:140, max:360, default:230, unit:'px' },
+  { key:'cat',  label:'Delning',      prop:'--col-cat',  min:140, max:460, default:300, unit:'px' },
 ];
 
 let colWidths = {}; // { key: px value }
@@ -1993,6 +2004,7 @@ function loadColWidths() {
     if (stored) colWidths = JSON.parse(stored);
   } catch(e) {}
   COL_DEFS.forEach(d => { if (!colWidths[d.key]) colWidths[d.key] = d.default; });
+  if (colWidths.cat === 230) colWidths.cat = 300; // gamla standardbredden, för små knappar
   applyColWidths();
 }
 
@@ -2106,6 +2118,19 @@ function prefillManual() {
   const set = (id, v) => { const el = document.getElementById(id); if (el && [...el.options].some(o => o.value === v)) el.value = v; };
   if (!document.getElementById('mAmt').value) document.getElementById('mAmt').value = src.amt;
   set('mPayer', src.card); set('mCat', src.cat); if (src.bud) set('mBud', src.bud);
+  syncMCatBtns();
+}
+// Delningsknappar i formuläret för manuella poster (Gemensam / AK la ut)
+function syncMCatBtns() {
+  const v = document.getElementById('mCat').value;
+  document.querySelectorAll('#mCatBtns .pill').forEach(b => {
+    b.className = 'pill' + (b.dataset.k === v ? (v === 'ak-out' ? ' pao' : ' pg') : '');
+  });
+}
+function setMCat(k) {
+  document.getElementById('mCat').value = k;
+  document.getElementById('mPayer').value = k === 'ak-out' ? 'Annakarin' : 'Oscar';
+  syncMCatBtns();
 }
 function renderTemplates() {
   const el = document.getElementById('tplList'); if (!el) return;
@@ -2115,7 +2140,7 @@ function renderTemplates() {
       <input type="text" value="${esc(t.merch)}" placeholder="Namn, t.ex. Hyra" onchange="setTpl(${t.id},'merch',this.value)">
       <input type="number" step="0.01" min="0" value="${t.amt}" onchange="setTpl(${t.id},'amt',this.value)" style="font-family:'DM Mono',monospace;">
       <select onchange="setTpl(${t.id},'card',this.value)">${PAYERS.map(p => `<option${t.card === p ? ' selected' : ''}>${p}</option>`).join('')}</select>
-      <select onchange="setTpl(${t.id},'cat',this.value)">${DELNING.map(d => `<option value="${d.k}"${t.cat === d.k ? ' selected' : ''}>${d.l}</option>`).join('')}</select>
+      <select onchange="setTpl(${t.id},'cat',this.value)">${DELNING.filter(d => ['gemensam','ak-out',t.cat].includes(d.k)).map(d => `<option value="${d.k}"${t.cat === d.k ? ' selected' : ''}>${d.l}</option>`).join('')}</select>
       <select onchange="setTpl(${t.id},'bud',this.value)">${budOptionsHtml(t.bud)}</select>
       <button class="btn btn-sm" onclick="applyTemplates(${t.id})">Lägg in</button>
       <button class="del" onclick="removeTemplate(${t.id})"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
@@ -2353,6 +2378,7 @@ document.getElementById('monthPicker').value =
   `${_prevMonth.getFullYear()}-${String(_prevMonth.getMonth()+1).padStart(2,'0')}`;
 
 syncManualDate();
+syncMCatBtns();
 loadColWidths();
 loadStorage().then(initFile);
 </script>
