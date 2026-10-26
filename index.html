@@ -3,6 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#ec3b9a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Splitr">
 <title>Splitr — Oscar & Annakarin</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -311,6 +315,23 @@ input[type=month]::-webkit-calendar-picker-indicator,input[type=date]::-webkit-c
 .sync-warn{font-size:12px;color:var(--warn);font-weight:800;}
 .tplrow{display:grid;grid-template-columns:1.4fr 90px 120px 150px 1.3fr auto 32px;gap:8px;align-items:center;margin-bottom:8px;}
 #confetti{position:fixed;inset:0;pointer-events:none;z-index:400;}
+/* Snabbutlägg */
+.quick{display:grid;gap:10px;max-width:540px;}
+.qamt{display:flex;align-items:center;gap:10px;}
+.qamt input{font-family:var(--head);font-size:46px;font-weight:600;text-align:center;padding:8px 12px;}
+.qamt span{font-family:var(--head);font-size:28px;color:var(--tx2);}
+.qwho{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.qbtn{padding:14px 10px;border-radius:18px;border:2px solid var(--bd2);background:var(--bg2);font-family:var(--font);font-weight:800;font-size:17px;color:var(--tx);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;transition:transform .2s var(--ease),background .15s,border-color .15s;}
+.qbtn small{font-size:12px;color:var(--tx3);font-weight:700;}
+.qbtn:active{transform:scale(.95);}
+.qbtn.on-gem{border-color:var(--osc);background:var(--osc-bg);color:var(--osc);animation:popIn .35s var(--ease);}
+.qbtn.on-ak{border-color:var(--ak);background:var(--ak-bg);color:var(--ak);animation:popIn .35s var(--ease);}
+.qrow{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.qsave{justify-content:center;font-size:17px;padding:15px;margin-top:6px;}
+.qsync{display:grid;gap:6px;max-width:540px;background:var(--bg2);border:1.5px solid var(--bd);border-radius:16px;padding:12px;}
+.qitem{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--bg2);border:1.5px solid var(--bd);border-radius:16px;padding:12px 14px;margin-bottom:8px;max-width:540px;animation:rise .4s var(--ease) both;}
+.qitem b{font-weight:800;}
+.qitem small{color:var(--tx3);font-weight:600;display:block;font-size:12.5px;}
 
 /* ── ANIMATIONER ── */
 @keyframes pageIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
@@ -331,6 +352,8 @@ input[type=month]::-webkit-calendar-picker-indicator,input[type=date]::-webkit-c
 }
 @media (max-width:860px){
   .shell{flex-direction:column;}
+  .content{order:-1;}
+  input[type=text],input[type=number],input[type=date],input[type=month],select{font-size:16px;}
   .sidebar{position:static;width:100%;border-right:none;border-bottom:1.5px solid var(--bd);overflow:visible;}
   .content{margin-left:0;padding:20px 16px 60px;}
   .nav{display:flex;flex-wrap:wrap;gap:4px;}
@@ -368,6 +391,7 @@ input[type=month]::-webkit-calendar-picker-indicator,input[type=date]::-webkit-c
   </div>
   <div class="netchip none" id="netChip" role="button" tabindex="0" title="Visa sammanställningen" onclick="goto('sum')" onkeydown="if(event.key==='Enter')goto('sum')"></div>
   <nav class="nav">
+    <button class="ni" onclick="goto('quick')" id="ni-quick"><span class="stepno">⚡</span>Snabbutlägg</button>
     <div class="nav-section">Månadens genomgång</div>
     <button class="ni step active" onclick="goto('import')" id="ni-import"><span class="stepno">1</span>
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
@@ -518,6 +542,30 @@ input[type=month]::-webkit-calendar-picker-indicator,input[type=date]::-webkit-c
   <div id="learnedList"></div>
 </div>
 <button class="btn btn-sm" id="learnedToggle" style="margin-top:8px;display:none;" onclick="toggleLearnedPanel()">Visa inlärda kategorier (<span id="learnedCount">0</span>)</button>
+</div>
+
+<!-- SNABBUTLÄGG (mobil) -->
+<div class="page" id="page-quick">
+  <div class="ph"><div><div class="pt">Snabbutlägg ⚡</div><div class="ps">Lägg in utlägg utanför Amex direkt när de händer</div></div></div>
+  <div id="qSync" style="margin-bottom:12px;"></div>
+  <div class="card quick">
+    <label class="fl" for="qAmt">Belopp</label>
+    <div class="qamt"><input type="text" inputmode="decimal" id="qAmt" placeholder="0" autocomplete="off" onkeydown="if(event.key==='Enter')document.getElementById('qMerch').focus()"><span>kr</span></div>
+    <label class="fl" for="qMerch">Vad var det?</label>
+    <input type="text" id="qMerch" list="merchList" placeholder="t.ex. Coop, blommor, lunch…" autocomplete="off" oninput="qPrefill()" onkeydown="if(event.key==='Enter')quickAdd()">
+    <span class="fl">Vem betalade?</span>
+    <div class="qwho">
+      <button type="button" class="qbtn" data-k="gemensam" onclick="setQCat('gemensam')">Oscar<small>delas lika</small></button>
+      <button type="button" class="qbtn" data-k="ak-out" onclick="setQCat('ak-out')">Annakarin<small>delas lika</small></button>
+    </div>
+    <div class="qrow">
+      <div class="field"><label class="fl" for="qDate">Datum</label><input type="date" id="qDate"></div>
+      <div class="field"><label class="fl" for="qBud">Kategori</label><select id="qBud"></select></div>
+    </div>
+    <button class="btn btn-p qsave" onclick="quickAdd()">Lägg till ✨</button>
+  </div>
+  <div class="slbl" style="margin-top:22px">Senaste utlägg</div>
+  <div id="qList"></div>
 </div>
 
 <!-- KATEGORISERA -->
@@ -930,6 +978,8 @@ function goto(name) {
   if (name === 'budget') renderBudget();
   if (name === 'bsetup') renderBsetup();
   if (name === 'ar')     renderAr();
+  if (name === 'quick')  renderQuick();
+  window.scrollTo(0, 0);
 }
 
 function updateKatSub() {
@@ -2363,65 +2413,248 @@ function renderInsights(items, month) {
   return html;
 }
 
-// ── FILSYNK (delad datafil, t.ex. i en Google Drive-mapp) ──
+// ── SYNK: Google Drive (dator och mobil) eller fil på datorn ──
+// Värden från Google Cloud. Inget av detta är hemligt: Google godkänner dem bara från er GitHub-sida.
+const GOOGLE = { clientId: '971240345732-3cfb2km285eib649kpqf3jsdq83qelif.apps.googleusercontent.com', apiKey: 'AIzaSyAnYQ31rbWcf-ya_ykr2ctLqPH__eTXG5I', appId: '971240345732' };
+const driveOk = () => !!GOOGLE.clientId;
+const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file'; // bara filer som appen skapat eller som ni valt i den
+const DAPI = 'https://www.googleapis.com';
 const FS_OK = typeof window.showOpenFilePicker === 'function';
-const SYNC_KEY = 'splitr_sync';
+const SYNC_KEY = 'splitr_sync', BASE_KEY = 'splitr_base', DRIVE_KEY = 'splitr_drive';
 const FILE_TYPES = [{ description: 'Splitr-data', accept: { 'application/json': ['.json'] } }];
 let fileHandle = null, syncState = 'off', lastSyncAt = null, pushTimer = null, syncBusy = false;
+let gToken = null, gTokenExp = 0, gTokenClient = null, gPending = null;
+let driveFile = (() => { try { return JSON.parse(localStorage.getItem(DRIVE_KEY)) || null; } catch (e) { return null; } })();
 
 function syncMeta() { try { return JSON.parse(localStorage.getItem(SYNC_KEY)) || {}; } catch (e) { return {}; } }
 function setSyncMeta(m) { try { localStorage.setItem(SYNC_KEY, JSON.stringify({ ...syncMeta(), ...m })); } catch (e) {} }
+// Senast synkade versionen sparas, så att ändringar från båda håll kan slås ihop
+function saveBase(text) { try { localStorage.setItem(BASE_KEY, text); } catch (e) {} }
+function loadBase() { try { return JSON.parse(localStorage.getItem(BASE_KEY)) || {}; } catch (e) { return {}; } }
 
-// Filhandtaget sparas i IndexedDB så att filen kommer ihåg efter omstart
+// Filhandtaget (dator) sparas i IndexedDB så att filen kommer ihåg efter omstart
 function idb() { return new Promise((res, rej) => { const r = indexedDB.open('splitr_fs', 1); r.onupgradeneeded = () => r.result.createObjectStore('h'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
 async function idbSet(k, v) { const db = await idb(); return new Promise((res, rej) => { const tx = db.transaction('h', 'readwrite'); tx.objectStore('h').put(v, k); tx.oncomplete = res; tx.onerror = () => rej(tx.error); }); }
 async function idbGet(k) { const db = await idb(); return new Promise((res, rej) => { const r = db.transaction('h').objectStore('h').get(k); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
 async function idbDel(k) { const db = await idb(); return new Promise((res, rej) => { const tx = db.transaction('h', 'readwrite'); tx.objectStore('h').delete(k); tx.oncomplete = res; tx.onerror = () => rej(tx.error); }); }
 
+// ── Sammanslagning (base = senast synkat, l = här, r = filen) ──
+// Den sida som ändrat något vinner. Har båda ändrat samma post vinner filen.
+const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+function merge3Obj(b, l, r) {
+  b = b || {}; l = l || {}; r = r || {};
+  const out = {};
+  new Set([...Object.keys(b), ...Object.keys(l), ...Object.keys(r)]).forEach(k => {
+    const v = same(l[k], r[k]) ? l[k] : same(l[k], b[k]) ? r[k] : same(r[k], b[k]) ? l[k] : r[k];
+    if (v !== undefined) out[k] = v;
+  });
+  return out;
+}
+function merge3Arr(b, l, r) {
+  b = b || []; l = l || []; r = r || [];
+  const B = new Map(b.map(x => [x.id, x])), L = new Map(l.map(x => [x.id, x])), R = new Map(r.map(x => [x.id, x]));
+  const out = [], seen = new Set();
+  [...r, ...l].forEach(x => {
+    if (seen.has(x.id)) return; seen.add(x.id);
+    const bx = B.get(x.id), lx = L.get(x.id), rx = R.get(x.id);
+    let v = null;
+    if (lx && rx) v = (!same(lx, bx) && same(rx, bx)) ? lx : rx;      // båda har den
+    else if (lx) v = (!bx || !same(lx, bx)) ? lx : null;              // ny här, eller borttagen i filen
+    else if (rx) v = (!bx || !same(rx, bx)) ? rx : null;              // ny i filen, eller borttagen här
+    if (v) out.push(v);
+  });
+  return out;
+}
+function mergeData(b, l, r) {
+  return {
+    saved: merge3Obj(b.saved, l.saved, r.saved), tx: merge3Arr(b.tx, l.tx, r.tx),
+    budgets: merge3Obj(b.budgets, l.budgets, r.budgets), colMap: merge3Obj(b.colMap, l.colMap, r.colMap),
+    learnedCats: merge3Obj(b.learnedCats, l.learnedCats, r.learnedCats),
+    learnedOwner: merge3Obj(b.learnedOwner, l.learnedOwner, r.learnedOwner),
+    templates: merge3Arr(b.templates, l.templates, r.templates)
+  };
+}
+
+// ── Två sorters lagring med samma funktioner: ready, stat, read, write ──
+const fsStore = {
+  name: () => fileHandle.name,
+  ready: async () => (await fileHandle.queryPermission({ mode: 'readwrite' })) === 'granted',
+  stat: async () => (await fileHandle.getFile()).lastModified,
+  read: async () => (await fileHandle.getFile()).text(),
+  write: async text => { const w = await fileHandle.createWritable(); await w.write(text); await w.close(); return (await fileHandle.getFile()).lastModified; }
+};
+async function gfetch(url, opts = {}) {
+  const r = await fetch(url, { ...opts, cache: 'no-store', headers: { ...(opts.headers || {}), Authorization: 'Bearer ' + gToken } });
+  if (r.status === 401) { gToken = null; const e = new Error('login'); e.name = 'NeedLogin'; throw e; }
+  if (!r.ok) throw new Error('Drive svarade ' + r.status);
+  return r;
+}
+const driveStore = {
+  name: () => driveFile.name,
+  ready: async () => !!gToken && Date.now() < gTokenExp,
+  stat: async () => (await (await gfetch(`${DAPI}/drive/v3/files/${driveFile.id}?fields=version`)).json()).version,
+  read: async () => (await gfetch(`${DAPI}/drive/v3/files/${driveFile.id}?alt=media`)).text(),
+  write: async text => (await (await gfetch(`${DAPI}/upload/drive/v3/files/${driveFile.id}?uploadType=media&fields=version`,
+    { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: text })).json()).version
+};
+function store() { if (driveOk()) return driveFile ? driveStore : null; return fileHandle ? fsStore : null; }
+
 function refreshAll() {
   badge(); updateKatSub(); renderList(); populateBudSelects(); renderBsetup(); updateLearnedPanel(); renderTemplates(); updateMerchList(); renderActive();
 }
-
-function renderSync() {
-  const el = document.getElementById('syncBox'); if (!el) return;
-  const btn = (label, fn) => `<button class="btn btn-sm" style="width:100%;justify-content:center;" onclick="${fn}">${label}</button>`;
-  if (!FS_OK) { el.innerHTML = '<div style="font-size:11px;color:var(--tx3)">Filsynk kräver Chrome eller Edge på dator.</div>'; return; }
-  if (!fileHandle) {
-    el.innerHTML = btn('Koppla datafil', 'connectFile(false)') + btn('Skapa ny datafil', 'connectFile(true)');
-    return;
-  }
-  const name = esc(fileHandle.name);
-  if (syncState === 'needperm') el.innerHTML = `<div class="sync-warn">Behöver ditt OK för att använda ${name}</div>` + btn('Återanslut', 'reconnectFile()') + btn('Koppla bort', 'disconnectFile()');
-  else if (syncState === 'error') el.innerHTML = `<div class="sync-warn">Kunde inte synka med ${name}</div>` + btn('Försök igen', 'syncNow()') + btn('Koppla bort', 'disconnectFile()');
-  else {
-    const t = lastSyncAt ? lastSyncAt.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' }) : '';
-    el.innerHTML = `<div class="sync-ok">✓ Synkad ${t} · ${name}</div>` + btn('Koppla bort', 'disconnectFile()');
-  }
-}
-
-function applyFile(data, mod) {
+function applyData(data) {
   saved = data.saved || {}; TX = data.tx || []; budgets = data.budgets || {}; colMap = data.colMap || {};
   learnedCats = data.learnedCats || {}; learnedOwner = data.learnedOwner || {}; templates = data.templates || [];
   migrateData();
   try { localStorage.setItem('splitr_data', buildPayload()); } catch (e) {}
-  const ts = Date.now();
-  setSyncMeta({ localTs: ts, syncedLocalTs: ts, fileMod: mod });
   refreshAll();
 }
-
-async function writeFile() {
-  if (!fileHandle) return;
+// Läs in filens version som den gällande
+function takeRemote(text, mod) {
+  applyData(JSON.parse(text));
+  const ts = Date.now();
+  setSyncMeta({ localTs: ts, syncedLocalTs: ts, fileMod: mod }); saveBase(text);
+  syncState = 'ok'; lastSyncAt = new Date();
+}
+// Skriv det som finns här till filen
+async function pushStore(s) {
   const ts = syncMeta().localTs || Date.now();
+  const text = buildPayload();
+  const mod = await s.write(text);
+  setSyncMeta({ fileMod: mod, syncedLocalTs: ts }); saveBase(text);
+  syncState = 'ok'; lastSyncAt = new Date();
+}
+
+// Jämför filen och webbläsaren och synka åt rätt håll; har båda ändrats slås de ihop
+async function syncNow() {
+  const s = store();
+  if (!s || syncBusy) return;
+  const modal = document.getElementById('splitModal');
+  if (modal && modal.style.display === 'flex') return;
+  syncBusy = true;
   try {
-    const w = await fileHandle.createWritable();
-    await w.write(buildPayload()); await w.close();
-    const f = await fileHandle.getFile();
-    setSyncMeta({ fileMod: f.lastModified, syncedLocalTs: ts });
-    syncState = 'ok'; lastSyncAt = new Date();
-  } catch (e) { syncState = (e && e.name === 'NotAllowedError') ? 'needperm' : 'error'; }
+    if (!(await s.ready())) { syncState = s === driveStore ? 'needlogin' : 'needperm'; return; }
+    const m = syncMeta();
+    const mod = await s.stat();
+    const fileChanged = mod !== m.fileMod;
+    const localChanged = (m.localTs || 0) > (m.syncedLocalTs || 0);
+    if (fileChanged) {
+      const text = await s.read();
+      if (text.trim()) {
+        if (localChanged) {
+          applyData(mergeData(loadBase(), JSON.parse(buildPayload()), JSON.parse(text)));
+          await pushStore(s);
+          toast('Synkat – dina och den andras ändringar är sammanslagna');
+        } else {
+          takeRemote(text, mod);
+          toast('Hämtade senaste ändringarna');
+        }
+        return;
+      }
+    }
+    if (fileChanged || localChanged) await pushStore(s);
+    else { syncState = 'ok'; lastSyncAt = lastSyncAt || new Date(); }
+  } catch (e) {
+    syncState = (e && e.name === 'NeedLogin') ? 'needlogin' : (e && e.name === 'NotAllowedError') ? 'needperm' : 'error';
+  } finally {
+    syncBusy = false; renderSync();
+    const m2 = syncMeta();
+    if (syncState === 'ok' && (m2.localTs || 0) > (m2.syncedLocalTs || 0)) schedulePush();
+  }
+}
+function schedulePush() { if (!store()) return; clearTimeout(pushTimer); pushTimer = setTimeout(syncNow, 700); }
+
+// Första kopplingen till en fil: tom webbläsare läser filen, annars slås båda ihop
+async function linkStore(s, text, mod) {
+  const remote = text && text.trim() ? JSON.parse(text) : null;
+  const fileHas = remote && (Object.keys(remote.saved || {}).length || (remote.tx || []).length);
+  const localHas = TX.length || Object.keys(saved).length;
+  if (fileHas && !localHas) { takeRemote(text, mod); toast('Data inläst från ' + s.name()); }
+  else if (fileHas) { applyData(mergeData({}, JSON.parse(buildPayload()), remote)); await pushStore(s); toast('Kopplad – din och filens data är sammanslagna'); }
+  else { await pushStore(s); toast('Kopplad till ' + s.name()); }
   renderSync();
 }
 
+// ── Google-inloggning och Drive ──
+function loadScript(src) {
+  return new Promise((res, rej) => {
+    if (document.querySelector(`script[src="${src}"]`)) { res(); return; }
+    const s = document.createElement('script'); s.src = src; s.async = true; s.onload = res; s.onerror = () => rej(new Error(src));
+    document.head.appendChild(s);
+  });
+}
+function initGoogle() {
+  if (gTokenClient || !(window.google && google.accounts && google.accounts.oauth2)) return;
+  gTokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: GOOGLE.clientId, scope: DRIVE_SCOPE,
+    callback: r => {
+      if (r.error) { if (gPending) gPending.rej(r); }
+      else { gToken = r.access_token; gTokenExp = Date.now() + (Number(r.expires_in || 3600) - 60) * 1000; if (gPending) gPending.res(); }
+      gPending = null;
+    },
+    error_callback: e => { if (gPending) gPending.rej(e); gPending = null; }
+  });
+}
+// Anropas direkt från ett klick, så att Googles inloggningsruta inte blockeras
+function googleLogin() {
+  initGoogle();
+  if (!gTokenClient) { toast('Google laddar fortfarande – försök igen om en sekund'); loadScript('https://accounts.google.com/gsi/client').then(initGoogle).catch(() => {}); return; }
+  new Promise((res, rej) => { gPending = { res, rej }; gTokenClient.requestAccessToken({ prompt: '' }); })
+    .then(async () => { syncState = 'ok'; renderSync(); if (driveFile) await syncNow(); })
+    .catch(() => { toast('Inloggningen avbröts'); renderSync(); });
+}
+function googleLogout() {
+  try { if (gToken) google.accounts.oauth2.revoke(gToken, () => {}); } catch (e) {}
+  gToken = null; syncState = driveFile ? 'needlogin' : 'off'; renderSync(); toast('Utloggad från Google');
+}
+// Välj er befintliga datafil i Drive (Annakarin hittar den under "Delade med mig")
+async function pickDriveFile() {
+  if (!gToken) { googleLogin(); return; }
+  try {
+    await loadScript('https://apis.google.com/js/api.js');
+    await new Promise(r => gapi.load('picker', r));
+  } catch (e) { toast('Kunde inte öppna filväljaren'); return; }
+  const mimes = 'application/json,text/plain,application/octet-stream';
+  const mine = new google.picker.DocsView(google.picker.ViewId.DOCS).setMimeTypes(mimes).setIncludeFolders(true);
+  const shared = new google.picker.DocsView(google.picker.ViewId.DOCS).setMimeTypes(mimes).setOwnedByMe(false);
+  new google.picker.PickerBuilder()
+    .setTitle('Välj er Splitr-datafil').setLocale('sv')
+    .setOAuthToken(gToken).setDeveloperKey(GOOGLE.apiKey).setAppId(GOOGLE.appId)
+    .addView(mine).addView(shared)
+    .setCallback(async d => {
+      if (d.action !== google.picker.Action.PICKED) return;
+      const doc = d.docs[0];
+      await useDriveFile({ id: doc.id, name: doc.name });
+    })
+    .build().setVisible(true);
+}
+async function useDriveFile(f) {
+  driveFile = f;
+  try { localStorage.setItem(DRIVE_KEY, JSON.stringify(f)); } catch (e) {}
+  try { await linkStore(driveStore, await driveStore.read(), await driveStore.stat()); }
+  catch (e) { syncState = (e && e.name === 'NeedLogin') ? 'needlogin' : 'error'; renderSync(); toast('Kunde inte läsa filen i Drive'); }
+}
+// Skapa en ny datafil i din Drive (dela den sedan med Annakarin i Drive)
+async function createDriveFile() {
+  if (!gToken) { googleLogin(); return; }
+  try {
+    const body = new FormData();
+    body.append('metadata', new Blob([JSON.stringify({ name: 'splitr-data.json', mimeType: 'application/json' })], { type: 'application/json' }));
+    body.append('file', new Blob([buildPayload()], { type: 'application/json' }));
+    const f = await (await gfetch(`${DAPI}/upload/drive/v3/files?uploadType=multipart&fields=id,name,version`, { method: 'POST', body })).json();
+    driveFile = { id: f.id, name: f.name };
+    try { localStorage.setItem(DRIVE_KEY, JSON.stringify(driveFile)); } catch (e) {}
+    setSyncMeta({ fileMod: f.version, syncedLocalTs: syncMeta().localTs || Date.now() }); saveBase(buildPayload());
+    syncState = 'ok'; lastSyncAt = new Date(); renderSync();
+    toast('Skapade splitr-data.json i din Drive – dela den med Annakarin');
+  } catch (e) { toast('Kunde inte skapa filen i Drive'); }
+}
+function disconnectDrive() {
+  driveFile = null; try { localStorage.removeItem(DRIVE_KEY); } catch (e) {}
+  syncState = 'off'; renderSync(); toast('Datafilen bortkopplad');
+}
+
+// ── Fil på datorn (reserv om Google inte är inställt) ──
 async function connectFile(create) {
   if (!FS_OK) return;
   try {
@@ -2429,20 +2662,12 @@ async function connectFile(create) {
       ? await window.showSaveFilePicker({ suggestedName: 'splitr-data.json', types: FILE_TYPES })
       : (await window.showOpenFilePicker({ types: FILE_TYPES }))[0];
     if (await h.requestPermission({ mode: 'readwrite' }) !== 'granted') { toast('Behörighet nekades'); return; }
-    const f = await h.getFile(); const txt = await f.text();
-    let data = null;
-    try { data = txt.trim() ? JSON.parse(txt) : null; } catch (e) { toast('Filen går inte att läsa som Splitr-data'); return; }
+    const f = await h.getFile(); const text = await f.text();
+    if (text.trim()) { try { JSON.parse(text); } catch (e) { toast('Filen går inte att läsa som Splitr-data'); return; } }
     fileHandle = h; await idbSet('handle', h);
-    const fileHas = data && (Object.keys(data.saved || {}).length || (data.tx || []).length);
-    const localHas = TX.length || Object.keys(saved).length;
-    if (fileHas && (!localHas || confirm('Filen innehåller redan data.\n\nOK = ersätt det som finns i webbläsaren med filens data.\nAvbryt = skriv webbläsarens data till filen.'))) {
-      applyFile(data, f.lastModified); syncState = 'ok'; lastSyncAt = new Date(); renderSync(); toast('Data inläst från ' + h.name);
-    } else {
-      await writeFile(); toast('Kopplad till ' + h.name);
-    }
-  } catch (e) { if (!e || e.name !== 'AbortError') { toast('Kunde inte koppla filen'); } }
+    await linkStore(fsStore, text, f.lastModified);
+  } catch (e) { if (!e || e.name !== 'AbortError') toast('Kunde inte koppla filen'); }
 }
-
 async function reconnectFile() {
   try { if (await fileHandle.requestPermission({ mode: 'readwrite' }) === 'granted') { syncState = 'ok'; await syncNow(); } } catch (e) {}
   renderSync();
@@ -2453,53 +2678,94 @@ async function disconnectFile() {
   renderSync(); toast('Filsynk bortkopplad');
 }
 
-// Jämför filen och webbläsaren och synka åt rätt håll
-async function syncNow() {
-  if (!fileHandle || syncBusy) return;
-  const modal = document.getElementById('splitModal');
-  if (modal && modal.style.display === 'flex') return;
-  syncBusy = true;
-  try {
-    if (await fileHandle.queryPermission({ mode: 'readwrite' }) !== 'granted') { syncState = 'needperm'; return; }
-    const f = await fileHandle.getFile(); const m = syncMeta();
-    const fileChanged = f.lastModified !== m.fileMod;
-    const localChanged = (m.localTs || 0) > (m.syncedLocalTs || 0);
-    if (fileChanged) {
-      const txt = await f.text();
-      if (!txt.trim()) { await writeFile(); return; }
-      let useFile = true;
-      if (localChanged) useFile = confirm('Både du och datafilen har ändrats sedan senaste synk.\n\nOK = läs in filens version (dina senaste ändringar här försvinner).\nAvbryt = behåll dina ändringar och skriv över filen.');
-      if (useFile) {
-        applyFile(JSON.parse(txt), f.lastModified);
-        syncState = 'ok'; lastSyncAt = new Date(); toast('Läste in uppdaterad data från filen');
-        return;
-      }
+function renderSync() {
+  const btn = (label, fn, cls = 'btn btn-sm') => `<button class="${cls}" style="width:100%;justify-content:center;" onclick="${fn}">${label}</button>`;
+  const t = lastSyncAt ? lastSyncAt.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' }) : '';
+  let html;
+  if (driveOk()) {
+    if (!driveFile) html = gToken
+      ? '<div class="sync-ok">Inloggad med Google</div>' + btn('Välj datafil i Drive', 'pickDriveFile()', 'btn btn-sm btn-p') + btn('Skapa ny datafil', 'createDriveFile()')
+      : btn('Logga in med Google', 'googleLogin()', 'btn btn-sm btn-p');
+    else {
+      const name = esc(driveFile.name);
+      if (!gToken || syncState === 'needlogin') html = `<div class="sync-warn">Logga in för att synka ${name}</div>` + btn('Logga in med Google', 'googleLogin()', 'btn btn-sm btn-p');
+      else if (syncState === 'error') html = `<div class="sync-warn">Kunde inte synka ${name}</div>` + btn('Försök igen', 'syncNow()');
+      else html = `<div class="sync-ok">✓ Synkad ${t} · ${name}</div>`;
+      if (gToken) html += btn('Logga ut', 'googleLogout()');
+      html += btn('Byt datafil', 'disconnectDrive()');
     }
-    if (fileChanged || localChanged) await writeFile();
-    else { syncState = 'ok'; lastSyncAt = lastSyncAt || new Date(); }
-  } catch (e) { syncState = 'error'; }
-  finally {
-    syncBusy = false; renderSync();
-    const m2 = syncMeta();
-    if (syncState === 'ok' && (m2.localTs || 0) > (m2.syncedLocalTs || 0)) schedulePush();
+  } else if (!FS_OK) html = '<div style="font-size:11px;color:var(--tx3)">Filsynk kräver Chrome eller Edge på dator.</div>';
+  else if (!fileHandle) html = btn('Koppla datafil', 'connectFile(false)') + btn('Skapa ny datafil', 'connectFile(true)');
+  else {
+    const name = esc(fileHandle.name);
+    if (syncState === 'needperm') html = `<div class="sync-warn">Behöver ditt OK för att använda ${name}</div>` + btn('Återanslut', 'reconnectFile()') + btn('Koppla bort', 'disconnectFile()');
+    else if (syncState === 'error') html = `<div class="sync-warn">Kunde inte synka med ${name}</div>` + btn('Försök igen', 'syncNow()') + btn('Koppla bort', 'disconnectFile()');
+    else html = `<div class="sync-ok">✓ Synkad ${t} · ${name}</div>` + btn('Koppla bort', 'disconnectFile()');
   }
+  const el = document.getElementById('syncBox'); if (el) el.innerHTML = html;
+  // Kort status i mobilvyn (bara när något behöver göras)
+  const q = document.getElementById('qSync');
+  if (q) q.innerHTML = (driveOk() && (!gToken || !driveFile || syncState === 'needlogin' || syncState === 'error')) ? `<div class="qsync">${html}</div>` : (driveOk() && driveFile ? `<div class="sync-ok" style="text-align:center">✓ Synkad med ${esc(driveFile.name)} ${t}</div>` : '');
 }
-function schedulePush() { if (!fileHandle) return; clearTimeout(pushTimer); pushTimer = setTimeout(syncNow, 700); }
 
 async function initFile() {
-  renderSync();
-  if (!FS_OK) return;
-  try {
-    const h = await idbGet('handle');
-    if (h) {
-      fileHandle = h; syncState = 'needperm';
-      if (await h.queryPermission({ mode: 'readwrite' }) === 'granted') await syncNow();
-    }
-  } catch (e) {}
+  if (driveOk()) {
+    syncState = driveFile ? 'needlogin' : 'off';
+    loadScript('https://accounts.google.com/gsi/client').then(initGoogle).catch(() => {});
+    loadScript('https://apis.google.com/js/api.js').catch(() => {});
+  } else if (FS_OK) {
+    try {
+      const h = await idbGet('handle');
+      if (h) { fileHandle = h; syncState = 'needperm'; if (await h.queryPermission({ mode: 'readwrite' }) === 'granted') await syncNow(); }
+    } catch (e) {}
+  }
   renderSync();
   window.addEventListener('focus', () => syncNow());
   document.addEventListener('visibilitychange', () => { if (!document.hidden) syncNow(); });
   setInterval(() => { if (!document.hidden) syncNow(); }, 20000);
+}
+
+// ── SNABBUTLÄGG (mobilvy) ──
+let qCat = 'gemensam';
+function setQCat(k) {
+  qCat = k;
+  document.querySelectorAll('#page-quick .qbtn').forEach(b => { b.className = 'qbtn' + (b.dataset.k === k ? (k === 'ak-out' ? ' on-ak' : ' on-gem') : ''); });
+}
+function qPrefill() {
+  const m = document.getElementById('qMerch').value.trim().toLowerCase(); if (!m) return;
+  const prev = [...TX].reverse().find(t => t.src === 'manual' && t.merch.toLowerCase() === m) || templates.find(t => t.merch.toLowerCase() === m);
+  if (!prev) return;
+  if (prev.cat === 'gemensam' || prev.cat === 'ak-out') setQCat(prev.cat);
+  const qb = document.getElementById('qBud'); if (prev.bud && [...qb.options].some(o => o.value === prev.bud)) qb.value = prev.bud;
+}
+function quickAdd() {
+  const amt = parseFloat((document.getElementById('qAmt').value || '').replace(/\s/g, '').replace(',', '.')) || 0;
+  const merch = document.getElementById('qMerch').value.trim();
+  if (!amt || !merch) { toast('Fyll i belopp och vad det var'); return; }
+  const date = document.getElementById('qDate').value || new Date().toISOString().slice(0, 10);
+  const card = qCat === 'ak-out' ? 'Annakarin' : 'Oscar';
+  const bud = document.getElementById('qBud').value || null;
+  if (bud) learnedCats[merchantKey(merch)] = bud;
+  learnedOwner[ownerKey(merch, card)] = qCat;
+  TX.push({ id: Date.now(), date, merch, amt, card, cat: qCat, bud, src: 'manual', month: date.slice(0, 7), note: '' });
+  document.getElementById('qAmt').value = ''; document.getElementById('qMerch').value = ''; document.getElementById('qBud').value = '';
+  badge(); updateMerchList(); persistStorage(); renderQuick();
+  toast(`Tillagt: ${kr(amt)} – ${merch} ✨`);
+  document.getElementById('qAmt').focus();
+}
+function delQuick(id) { TX = TX.filter(t => t.id !== id); badge(); persistStorage(); renderQuick(); }
+function renderQuick() {
+  const qd = document.getElementById('qDate'); if (qd && !qd.value) qd.value = new Date().toISOString().slice(0, 10);
+  const qb = document.getElementById('qBud'); if (qb && !qb.options.length) qb.innerHTML = budOptionsHtml('');
+  setQCat(qCat);
+  const list = TX.filter(t => t.src === 'manual').sort((a, b) => b.id - a.id).slice(0, 8);
+  const el = document.getElementById('qList'); if (!el) return;
+  el.innerHTML = list.length ? list.map(t => `<div class="qitem">
+      <div><b>${esc(t.merch)}</b><small>${fd(t.date)} · ${t.cat === 'ak-out' ? 'Annakarin la ut' : 'Oscar la ut'}</small></div>
+      <div style="display:flex;align-items:center;gap:6px"><span style="font-family:'DM Mono',monospace;font-weight:500">${kr(t.amt)}</span>
+      <button class="del" onclick="delQuick(${t.id})" aria-label="Ta bort"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button></div>
+    </div>`).join('') : '<div class="empty" style="padding:24px">Inga utlägg än</div>';
+  renderSync();
 }
 
 // Kortinnehavarens förnamn räcker i listan (hela namnet syns när man håller musen över)
@@ -2609,7 +2875,7 @@ document.getElementById('monthPicker').value =
 syncManualDate();
 syncMCatBtns();
 loadColWidths();
-loadStorage().then(initFile);
+loadStorage().then(() => { if (innerWidth < 860) goto('quick'); return initFile(); });
 </script>
 </body>
 </html>
