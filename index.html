@@ -220,6 +220,10 @@ input[type=month]::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:po
 .modal{background:var(--bg2);border:1px solid var(--bd2);border-radius:var(--r);padding:28px 32px;max-width:480px;width:90%;}
 .modal h2{font-size:17px;font-weight:600;margin-bottom:16px;}
 .swish-msg{background:var(--bg3);border:1px solid var(--bd2);border-radius:var(--rs);padding:14px 16px;font-size:14px;line-height:1.7;margin-bottom:16px;white-space:pre-wrap;font-family:'DM Mono',monospace;}
+.snack{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--bg4);border:1px solid var(--bd3);border-radius:var(--rs);padding:10px 14px;font-size:13px;z-index:300;display:none;align-items:center;gap:10px;box-shadow:0 6px 24px rgba(0,0,0,.4);}
+.sync-ok{font-size:11px;color:var(--gem);}
+.sync-warn{font-size:11px;color:#fbbf24;}
+.tplrow{display:grid;grid-template-columns:1.4fr 90px 120px 150px 1.3fr auto 28px;gap:8px;align-items:center;margin-bottom:8px;}
 </style>
 </head>
 <body>
@@ -267,6 +271,8 @@ input[type=month]::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:po
     </button>
   </nav>
   <div class="sidebar-footer">
+    <div class="slbl" style="margin-bottom:2px;">Synk</div>
+    <div id="syncBox" style="display:grid;gap:6px;margin-bottom:10px;"></div>
     <div class="slbl" style="margin-bottom:2px;">Data</div>
     <button class="btn btn-sm" style="width:100%;justify-content:center;" onclick="exportJSON()">
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
@@ -322,9 +328,9 @@ input[type=month]::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:po
       <div style="display:grid;gap:10px;">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
           <div class="field"><label class="fl">Datum</label><input type="date" id="mDate"></div>
-          <div class="field"><label class="fl">Belopp (kr)</label><input type="number" id="mAmt" placeholder="0" min="0" step="0.01"></div>
+          <div class="field"><label class="fl">Belopp (kr)</label><input type="number" id="mAmt" placeholder="0" min="0" step="0.01" onkeydown="if(event.key==='Enter')addManual()"></div>
         </div>
-        <div class="field"><label class="fl">Butik / beskrivning</label><input type="text" id="mMerch" placeholder="t.ex. Coop, Restaurang…"></div>
+        <div class="field"><label class="fl">Butik / beskrivning</label><input type="text" id="mMerch" list="merchList" placeholder="t.ex. Coop, Restaurang…" oninput="prefillManual()" onkeydown="if(event.key==='Enter')addManual()"><datalist id="merchList"></datalist></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
           <div class="field"><label class="fl">Betalt av</label>
             <select id="mPayer"><option value="Oscar">Oscar</option><option value="Annakarin">Annakarin</option><option value="Kontant">Kontant</option><option value="Annat kort">Annat kort</option></select>
@@ -342,13 +348,31 @@ input[type=month]::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:po
         <div class="field"><label class="fl">Budgetkategori</label>
           <select id="mBud"><option value="">— välj —</option></select>
         </div>
-        <button class="btn btn-p" onclick="addManual()" style="justify-content:center;">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.5v15m7.5-7.5h-15"/></svg>
-          Lägg till rad
-        </button>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:8px;">
+          <button class="btn btn-p" onclick="addManual()" style="justify-content:center;">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+            Lägg till rad
+          </button>
+          <button class="btn" onclick="saveAsTemplate()" title="Spara som återkommande månadsmall">Spara som mall</button>
+        </div>
       </div>
     </div>
   </div>
+
+<!-- Månadsmallar -->
+<div class="card" id="tplCard" style="margin-top:8px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:8px;flex-wrap:wrap;">
+    <div>
+      <div class="slbl" style="margin-bottom:2px;">Månadsmallar</div>
+      <div style="font-size:12px;color:var(--tx2)">Fasta poster som hyra och försäkring. Ändra här så gäller det nästa gång. Mallarna läggs på vald månad, en gång per mall.</div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-sm" onclick="addTemplate()">+ Ny mall</button>
+      <button class="btn btn-sm btn-gem" onclick="applyTemplates()">Lägg in alla för vald månad</button>
+    </div>
+  </div>
+  <div id="tplList"></div>
+</div>
 
 <!-- Learned categories panel -->
 <div id="learnedPanel" style="display:none;margin-top:8px;" class="card">
@@ -424,7 +448,7 @@ input[type=month]::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:po
   <div class="toolbar">
     <div class="fbar">
       <button class="fp active" onclick="setFilter('alla')" id="fp-alla">Alla</button>
-      <button class="fp" onclick="setFilter('ingen')" id="fp-ingen">Okategoriserade</button>
+      <button class="fp" onclick="setFilter('ingen')" id="fp-ingen">Saknar budget</button>
       <button class="fp" onclick="setFilter('gemensam')" id="fp-gemensam">Gemensam</button>
       <button class="fp" onclick="setFilter('oscar')" id="fp-oscar">Oscar privat</button>
       <button class="fp" onclick="setFilter('ak')" id="fp-ak">AK privat</button>
@@ -541,6 +565,7 @@ input[type=month]::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:po
 </main>
 </div>
 <div class="toast" id="toast"></div>
+<div class="snack" id="snack"></div>
 
 <script>
 // ── STATE ──
@@ -554,6 +579,8 @@ let budgets = {}; // { categoryKey: amountPerMonth }
 let selectedIds = new Set();  // bulk selection
 let colMap = {};               // saved column mapping: {date,merch,amt,card}
 let learnedCats = {};          // merchant->bud learned from past categorizations: {merchantKey: budKey}
+let learnedOwner = {};         // butik + kortinnehavare -> delningskategori: {merchantKey|ak/osc: 'gemensam'|'oscar'|…}
+let templates = [];            // månadsmallar: [{id, merch, amt, card, cat, bud}]
 
 // Hierarchical budget categories
 // Each group has a parent and subcategories
@@ -664,25 +691,49 @@ async function loadStorage() {
       budgets     = data.budgets     || {};
       colMap      = data.colMap      || {};
       learnedCats = data.learnedCats || {};
+      learnedOwner = data.learnedOwner || {};
+      templates   = data.templates   || [];
     }
   } catch(e) {}
   // Budget key defaults handled by migrateData()
   migrateData();
   badge(); updateKatSub(); renderList(); populateBudSelects(); renderBsetup(); updateLearnedPanel(); loadColWidths();
+  renderTemplates(); updateMerchList();
+}
+
+function buildPayload() {
+  return JSON.stringify({ saved, tx: TX, budgets, colMap, learnedCats, learnedOwner, templates });
 }
 
 async function persistStorage() {
-  const payload = JSON.stringify({ saved, tx: TX, budgets, colMap, learnedCats });
+  const payload = buildPayload();
   try { localStorage.setItem('splitr_data', payload); } catch(e) {}
+  setSyncMeta({ localTs: Date.now() });
+  schedulePush();
   // Skriv även till window.storage om den finns (bakåtkompatibilitet)
   try { if (window.storage && window.storage.set) await window.storage.set('splitr_data', payload); } catch(e) {}
 }
 
 // ── HELPERS ──
 const mp  = document.getElementById('monthPicker');
-mp.addEventListener('change', () => { renderList(); badge(); updateKatSub(); });
+mp.addEventListener('change', () => {
+  renderList(); badge(); updateKatSub(); syncManualDate();
+  budViewMonth = null;
+  renderActive();
+});
+// Rita om den vy som visas just nu (sammanfattning, budget, helår, historik)
+function renderActive() {
+  const active = document.querySelector('.page.active');
+  const name = active ? active.id.replace('page-','') : '';
+  if (name === 'sum')    renderSum();
+  if (name === 'budget') renderBudget();
+  if (name === 'ar')     renderAr();
+  if (name === 'hist')   renderHist();
+}
 const gm  = () => mp.value;
 const mi  = () => TX.filter(t => t.month === gm());
+// Poster för en månad: aktuella poster om de finns, annars sparad historik
+const itemsOf = m => { const live = TX.filter(t => t.month === m); return live.length ? live : (saved[m] || []); };
 const kr  = n  => Math.round(n).toLocaleString('sv-SE') + ' kr';
 const fd  = s  => { if (!s) return '—'; const d = new Date(s); return isNaN(d) ? s : d.toLocaleDateString('sv-SE', {day:'2-digit', month:'short'}); };
 // Belopp med tecken: krediter/återbetalningar (src==='credit') räknas som negativa i alla summeringar
@@ -748,8 +799,8 @@ function updateKatSub() {
   const items = mi(), sub = document.getElementById('katSub');
   if (!sub) return;
   if (!items.length) { sub.textContent = ''; return; }
-  const uncat = items.filter(t => !t.cat).length;
-  sub.textContent = `${items.length} poster · ${uncat} okategoriserade`;
+  const uncat = items.filter(t => !t.bud).length;
+  sub.textContent = `${items.length} poster · ${uncat} saknar budgetkategori`;
 }
 
 function populateBudSelects() {
@@ -859,20 +910,56 @@ function confirmImport() {
     const isCredit = amt < 0 && !isAnnFee;
     const finalAmt = Math.abs(amt);
     const mk = merchantKey(merch);
-    const suggestedBud = isAnnFee ? 'pren' : (learnedCats[mk] || null);
+    const suggestedBud = isAnnFee ? 'pren' : (fuzzyGet(learnedCats, mk) || null);
+    const suggestedCat = isAnnFee ? 'gemensam' : (fuzzyGet(learnedOwner, ownerKey(merch, card)) || 'gemensam');
 
     imported.push({
       id: Date.now()+idx, date, merch, amt: finalAmt, card,
-      cat: 'gemensam', bud: suggestedBud,
+      cat: suggestedCat, bud: suggestedBud,
       src: isCredit ? 'credit' : 'import',
       month, note: isAnnFee ? 'Årsavgift — delas 50/50' : ''
     });
   });
 
-  // Remove old imported rows for all affected months, then add new
+  // Poster strax utanför fakturamånaden (t.ex. den 1:a i nästa månad) hör till samma faktura
+  if (imported.length) {
+    const freq = {};
+    imported.forEach(t => freq[t.month] = (freq[t.month]||0) + 1);
+    const dom = Object.entries(freq).sort((a,b)=>b[1]-a[1])[0][0];
+    const start = new Date(dom+'-01'), end = new Date(start.getFullYear(), start.getMonth()+1, 0);
+    const WEEK = 7*86400000;
+    imported.forEach(t => {
+      if (t.month === dom) return;
+      const d = new Date(t.date);
+      if (isNaN(d)) return;
+      if ((d > end && d - end <= WEEK) || (d < start && start - d <= WEEK)) t.month = dom;
+    });
+  }
+
+  // Ersätt tidigare importerade rader för berörda månader, men behåll kategorisering,
+  // kommentar och uppdelningar för poster som finns kvar i den nya filen
   const importedMonths = [...new Set(imported.map(t=>t.month))];
-  TX = TX.filter(t => !(importedMonths.includes(t.month) && (t.src==='import'||t.src==='credit')));
-  TX.push(...imported);
+  const isOldImp = t => importedMonths.includes(t.month) && (t.src==='import'||t.src==='credit');
+  const keyOf = (date,merch,amt) => date+'|'+merch+'|'+Math.round(amt*100);
+  const plain = {}, groups = {}, groupByKey = {};
+  TX.filter(isOldImp).forEach(t => {
+    if (t.split) { (groups[t.splitGroup] = groups[t.splitGroup] || []).push(t); }
+    else { const k = keyOf(t.date,t.merch,t.amt); (plain[k] = plain[k] || []).push(t); }
+  });
+  Object.values(groups).forEach(g => {
+    const k = keyOf(g[0].date, g[0].merch, g.reduce((a,t)=>a+t.amt,0));
+    (groupByKey[k] = groupByKey[k] || []).push(g);
+  });
+  const keptSplits = [], fresh = [];
+  imported.forEach(t => {
+    const k = keyOf(t.date,t.merch,t.amt);
+    if (groupByKey[k] && groupByKey[k].length) { keptSplits.push(...groupByKey[k].shift()); return; }
+    const old = plain[k] && plain[k].shift();
+    if (old) { t.cat = old.cat; t.bud = old.bud || t.bud; t.note = old.note || t.note; }
+    fresh.push(t);
+  });
+  TX = TX.filter(t => !isOldImp(t));
+  TX.push(...keptSplits, ...fresh);
 
   // Switch picker to the most common month in the file
   if (importedMonths.length > 0) {
@@ -912,16 +999,19 @@ function addManual() {
   const month=gm();
   // Learn budget category from merchant
   if(bud){ learnedCats[merchantKey(merch)] = bud; updateLearnedPanel(); }
+  learnedOwner[ownerKey(merch,card)] = cat;
   TX.push({id:Date.now(),date,merch,amt,card,cat,bud,src:'manual',month,note:''});
+  // Behåll datum, betalare och kategori så nästa rad går snabbt
   document.getElementById('mMerch').value=''; document.getElementById('mAmt').value='';
-  badge(); persistStorage(); toast('Rad tillagd');
+  document.getElementById('mMerch').focus();
+  badge(); updateMerchList(); persistStorage(); toast('Rad tillagd');
 }
 
 // ── CATEGORIES ──
 // Normalize merchant name to a key for learning
 function merchantKey(m) { return m.toLowerCase().replace(/[^a-zåäö0-9]/g,'').slice(0,24); }
 
-function setCat(id,cat){const t=TX.find(x=>x.id===id);if(t){t.cat=cat;renderList();badge();updateKatSub();persistStorage();}}
+function setCat(id,cat){const t=TX.find(x=>x.id===id);if(t){t.cat=cat;learnedOwner[ownerKey(t.merch,t.card)]=cat;renderList();badge();updateKatSub();persistStorage();offerSimilar(t,'cat');}}
 
 function setBud(id,bud){
   const t=TX.find(x=>x.id===id);
@@ -933,7 +1023,8 @@ function setBud(id,bud){
       learnedCats[mk] = bud;
       updateLearnedPanel();
     }
-    renderList();persistStorage();
+    renderList();badge();updateKatSub();persistStorage();
+    if(bud) offerSimilar(t,'bud');
   }
 }
 
@@ -955,7 +1046,7 @@ function applyBulk(){
   selectedIds.forEach(id=>{
     const t=TX.find(x=>x.id===id);
     if(t){
-      if(cat) t.cat=cat;
+      if(cat){t.cat=cat;learnedOwner[ownerKey(t.merch,t.card)]=cat;}
       if(bud){t.bud=bud;learnedCats[merchantKey(t.merch)]=bud;}
     }
   });
@@ -1179,11 +1270,11 @@ function setFilter(f) {
 function filtered(){
   const items=mi();
   if(filter==='alla') return items;
-  if(filter==='ingen') return items.filter(t=>!t.cat);
+  if(filter==='ingen') return items.filter(t=>!t.bud);
   return items.filter(t=>t.cat===filter);
 }
 function badge(){
-  const n=mi().filter(t=>!t.cat).length;
+  const n=mi().filter(t=>!t.bud).length;
   const b=document.getElementById('nbadge');
   if(!b) return;
   b.textContent=n; b.style.display=n>0?'inline-flex':'none';
@@ -1223,7 +1314,7 @@ function renderList(){
   if(bulkBar){bulkBar.style.display=selectedIds.size>0?'flex':'none';if(bulkCount)bulkCount.textContent=`${selectedIds.size} markerade`;}
   const el=document.getElementById('txList');
   if(!items.length){
-    el.innerHTML=`<div class="empty"><div class="ei"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h3.75M9 15h3.75M9 18h3.75"/></svg></div>${filter==='ingen'&&!ql?'Alla poster är kategoriserade! 🎉':ql?'Ingen träff på "'+q+'"':'Inga poster'}</div>`;
+    el.innerHTML=`<div class="empty"><div class="ei"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h3.75M9 15h3.75M9 18h3.75"/></svg></div>${filter==='ingen'&&!ql?'Alla poster har budgetkategori! 🎉':ql?'Ingen träff på "'+q+'"':'Inga poster'}</div>`;
     updateKatSub(); return;
   }
   const allSelected=items.length>0&&items.every(t=>selectedIds.has(t.id));
@@ -1236,7 +1327,7 @@ function renderList(){
       const isSel=selectedIds.has(t.id);
       const isCredit=t.src==='credit';
       const mk=merchantKey(t.merch);
-      const hasSuggestion=t.bud&&learnedCats[mk]===t.bud;
+      const hasSuggestion=t.bud&&fuzzyGet(learnedCats,mk)===t.bud;
       const hasNote=t.note&&t.note.trim();
       return `<div class="txr with-bud${t.src==='manual'?' manual':''}${isSel?' selected':''}">
         <input type="checkbox" class="chk" ${isSel?'checked':''} onchange="toggleSelect(${t.id})">
@@ -1274,7 +1365,7 @@ function renderSum(){
   const akPriv=s(t=>t.cat==='ak');
   const oscOut=s(t=>t.cat==='oscar-out');
   const akOut=s(t=>t.cat==='ak-out');
-  const uncat=items.filter(t=>!t.cat).length;
+  const uncat=items.filter(t=>!t.bud).length;
   const netto=Math.round(gem/2+akPriv+oscOut/2-akOut/2);
   const heroC=netto>0?'hak':netto<0?'hosc':'heven';
   const heroL=netto>0?'Annakarin betalar Oscar':netto<0?'Oscar betalar Annakarin':'Ni är jämna';
@@ -1283,7 +1374,7 @@ function renderSum(){
   const c=document.getElementById('sumContent');
   if(!items.length){c.innerHTML=`<div class="empty"><div class="ei"></div>Inga transaktioner</div>`;return;}
   c.innerHTML=`
-    ${uncat>0?`<div class="warn"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z"/></svg>${uncat} poster ej kategoriserade</div>`:''}
+    ${uncat>0?`<div class="warn"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z"/></svg>${uncat} poster saknar budgetkategori</div>`:''}
     <div class="hero ${heroC}">
       <div><div class="hlbl">${heroL}</div><div class="hamt ${amtC}">${kr(Math.abs(netto))}</div><div class="hdet">${mn} · Amex-faktura ${kr(amexTot)}</div></div>
       <div style="text-align:right">
@@ -1307,6 +1398,7 @@ function renderSum(){
       <div class="crow minus"><div class="crl"><div class="crdot" style="background:var(--ao)"></div>− ½ av AKs utlägg (andra kort)</div><div class="crr">−${kr(akOut/2)}</div></div>
       <div class="crow tot ${totC}"><div class="crl">${netto>=0?'Annakarin betalar Oscar':'Oscar betalar Annakarin'}</div><div class="crr">${kr(Math.abs(netto))}</div></div>
     </div>
+    ${renderInsights(items,month)}
     ${renderBreakdown(items)}
   `;
 }
@@ -1346,9 +1438,7 @@ function renderBudget() {
     return `<button class="mtab${m===budViewMonth?' active':''}" onclick="budViewMonth='${m}';renderBudget()">${mn}</button>`;
   }).join('');
 
-  const viewItems = budViewMonth === month
-    ? TX.filter(t => t.month === budViewMonth)
-    : (saved[budViewMonth] || []);
+  const viewItems = itemsOf(budViewMonth);
 
   const mn = new Date(budViewMonth+'-01').toLocaleString('sv-SE',{month:'long',year:'numeric'});
   document.getElementById('budSub').textContent = mn.charAt(0).toUpperCase()+mn.slice(1);
@@ -1489,7 +1579,7 @@ function renderBudget() {
     topGroups.forEach(g => {
       const months6 = allMonths.slice(0,6).reverse();
       const vals = months6.map(m2 => {
-        const its = m2===month ? TX.filter(t=>t.month===m2) : (saved[m2]||[]);
+        const its = itemsOf(m2);
         const fil = budViewTab==='oscar' ? its.filter(t=>t.cat==='oscar')
                   : budViewTab==='ak'    ? its.filter(t=>t.cat==='ak')
                   : its.filter(t=>t.cat==='gemensam'||t.cat==='oscar-out'||t.cat==='ak-out');
@@ -1599,12 +1689,15 @@ function renderHist() {
 }
 
 function loadMonth(month) {
-  if(saved[month]){TX=[...TX.filter(t=>t.month!==month),...saved[month]];mp.value=month;goto('kat');badge();updateKatSub();}
+  if(!saved[month]) return;
+  // Finns månaden redan bland aktuella poster byter vi bara vy, så att nyare ändringar inte skrivs över av den äldre kopian
+  if(!TX.some(t=>t.month===month)) TX=[...TX,...saved[month].map(t=>({...t}))];
+  mp.value=month;goto('kat');badge();updateKatSub();
 }
 
 // ── JSON EXPORT / IMPORT ──
 function exportJSON() {
-  const data={saved,tx:TX,budgets,colMap,learnedCats,exportedAt:new Date().toISOString()};
+  const data={saved,tx:TX,budgets,colMap,learnedCats,learnedOwner,templates,exportedAt:new Date().toISOString()};
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
@@ -1623,10 +1716,12 @@ function importJSON(event) {
       if(data.budgets)     budgets     = data.budgets;
       if(data.colMap)      colMap      = data.colMap;
       if(data.learnedCats) learnedCats = data.learnedCats;
+      if(data.learnedOwner) learnedOwner = data.learnedOwner;
+      if(data.templates)    templates    = data.templates;
       // Budget key defaults + migration handled by migrateData()
       persistStorage();
       migrateData();
-      badge(); updateKatSub(); renderList(); renderHist(); populateBudSelects(); renderBsetup(); updateLearnedPanel();
+      badge(); updateKatSub(); renderList(); renderHist(); populateBudSelects(); renderBsetup(); updateLearnedPanel(); renderTemplates(); updateMerchList();
       toast('Data inläst från '+file.name+' ✓');
       event.target.value='';
     } catch(err){toast('Fel vid inläsning: '+err.message);}
@@ -1658,9 +1753,8 @@ function renderAr() {
   // Gather all items for this year (saved months + current TX if in year)
   const yearMonths = allMonths.filter(m => m.startsWith(arViewYear));
   const curMonth = document.getElementById('monthPicker').value;
-  const allItems = yearMonths.flatMap(m =>
-    m === curMonth ? TX.filter(t => t.month === m) : (saved[m] || [])
-  );
+  // Aktuella poster (TX) gäller för alla månader som finns där; sparad historik används bara för månader som saknas i TX
+  const allItems = yearMonths.flatMap(itemsOf);
 
   // Person filter
   const items = arViewPerson === 'oscar'
@@ -1675,7 +1769,7 @@ function renderAr() {
 
   // Totals per month
   const monthTotals = months12.map(m => {
-    const its = m === curMonth ? TX.filter(t=>t.month===m) : (saved[m]||[]);
+    const its = itemsOf(m);
     const fil  = arViewPerson === 'oscar' ? its.filter(t=>t.card&&t.card.toLowerCase().includes('oscar'))
                : arViewPerson === 'ak'    ? its.filter(t=>t.card&&(t.card.toLowerCase().includes('annakarin')||t.card.toLowerCase().includes('lind')))
                : its;
@@ -1686,13 +1780,13 @@ function renderAr() {
   const monthBudget = BUD_KEYS.reduce((a,k) => a+(budgets[k+suffix]||budgets[k]||0), 0);
   const yearBudget  = monthBudget * 12;
   const avgMonthly  = yearTotal / Math.max(yearMonths.length, 1);
-  const savedMonthCount = yearMonths.filter(m => saved[m] || m===curMonth).length;
+  const savedMonthCount = yearMonths.filter(m => itemsOf(m).length).length;
 
   // Spending per group per month (for heatmap / table)
   const groupMonthData = {}; // groupKey -> [jan..dec]
   BUD_GROUPS.forEach(g => {
     groupMonthData[g.k] = months12.map(m => {
-      const its = m===curMonth ? TX.filter(t=>t.month===m) : (saved[m]||[]);
+      const its = itemsOf(m);
       const fil  = arViewPerson==='oscar' ? its.filter(t=>t.card&&t.card.toLowerCase().includes('oscar'))
                  : arViewPerson==='ak'    ? its.filter(t=>t.card&&(t.card.toLowerCase().includes('annakarin')||t.card.toLowerCase().includes('lind')))
                  : its;
@@ -1747,7 +1841,7 @@ function renderAr() {
         ${months12.map((m,i) => {
           const v   = monthTotals[i];
           const h   = v > 0 ? Math.max(Math.round(v/maxMonth*barMaxH), 3) : 0;
-          const has = saved[m] || (m===curMonth && TX.some(t=>t.month===m));
+          const has = itemsOf(m).length > 0;
           const over= monthBudget>0 && v>monthBudget;
           const col = !has ? 'var(--bg4)' : over ? '#ef4444' : 'var(--gem)';
           const isCur = m === curMonth;
@@ -1939,6 +2033,316 @@ function renderColSliders() {
     </div>`).join('');
 }
 
+// ── HJÄLPARE ──
+const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const PAYERS = ['Oscar','Annakarin','Kontant','Annat kort'];
+function lastDayOfMonth(m) { const [y,mo] = m.split('-').map(Number); return m + '-' + String(new Date(y, mo, 0).getDate()).padStart(2,'0'); }
+function syncManualDate() { const el = document.getElementById('mDate'); if (el && gm() && el.value.slice(0,7) !== gm()) el.value = lastDayOfMonth(gm()); }
+
+// Liten ruta med knapp längst ned ("Gör likadant för 3 liknande?")
+let snackT;
+function snack(msg, label, fn) {
+  const el = document.getElementById('snack'); el.innerHTML = '';
+  const s = document.createElement('span'); s.textContent = msg;
+  const yes = document.createElement('button'); yes.className = 'btn btn-sm btn-gem'; yes.textContent = label;
+  yes.onclick = () => { el.style.display = 'none'; fn(); };
+  const no = document.createElement('button'); no.className = 'btn btn-sm'; no.textContent = 'Nej';
+  no.onclick = () => { el.style.display = 'none'; };
+  el.append(s, yes, no); el.style.display = 'flex';
+  clearTimeout(snackT); snackT = setTimeout(() => { el.style.display = 'none'; }, 9000);
+}
+
+// ── SMARTARE FÖRSLAG ──
+const isAkCard = c => /annakarin|lind/i.test(c || '');
+const ownerKey = (merch, card) => merchantKey(merch) + '|' + (isAkCard(card) ? 'ak' : 'osc');
+// Exakt träff först, annars butik med samma namnbörjan (t.ex. ICA KVANTUM i olika städer)
+function fuzzyGet(map, key) {
+  if (map[key] !== undefined) return map[key];
+  const [base, suf = ''] = key.split('|');
+  const b = base.replace(/^\d+/, '');
+  if (b.length < 5) return undefined;
+  let best, bl = 0;
+  for (const k in map) {
+    const [kb, ks = ''] = k.split('|');
+    if (ks !== suf) continue;
+    const s = kb.replace(/^\d+/, '');
+    let i = 0; while (i < s.length && i < b.length && s[i] === b[i]) i++;
+    if (i >= 5 && i > bl) { bl = i; best = map[k]; }
+  }
+  return best;
+}
+function similarMerch(a, b) {
+  const ka = merchantKey(a).replace(/^\d+/, ''), kb = merchantKey(b).replace(/^\d+/, '');
+  if (ka === kb) return true;
+  let i = 0; while (i < ka.length && i < kb.length && ka[i] === kb[i]) i++;
+  return i >= 5;
+}
+// Efter att en rad kategoriserats: erbjud samma val för liknande rader i månaden
+function offerSimilar(t, field) {
+  const val = field === 'bud' ? t.bud : t.cat;
+  if (!val) return;
+  const same = mi().filter(x => x.id !== t.id && similarMerch(x.merch, t.merch) &&
+    (field === 'bud' ? !x.bud : (x.cat !== t.cat && isAkCard(x.card) === isAkCard(t.card))));
+  if (!same.length) return;
+  snack(`${same.length} liknande (${t.merch.replace(/\s+/g,' ').trim().slice(0,24)}) – gör likadant?`, 'Ja, alla', () => {
+    same.forEach(x => { x[field] = val; if (field === 'bud') learnedCats[merchantKey(x.merch)] = val; else learnedOwner[ownerKey(x.merch, x.card)] = val; });
+    renderList(); badge(); updateKatSub(); persistStorage();
+    toast('Uppdaterade ' + same.length + ' poster');
+  });
+}
+
+// ── MÅNADSMALLAR OCH SNABBINMATNING ──
+function updateMerchList() {
+  const dl = document.getElementById('merchList'); if (!dl) return;
+  const names = [...new Set([...templates.map(t => t.merch), ...TX.filter(t => t.src === 'manual').map(t => t.merch)].filter(Boolean))].sort();
+  dl.innerHTML = names.map(n => `<option value="${esc(n)}">`).join('');
+}
+// Fyll i betalare, delning, budget och belopp från en tidigare manuell post eller mall med samma namn
+function prefillManual() {
+  const m = document.getElementById('mMerch').value.trim().toLowerCase(); if (!m) return;
+  const prev = [...TX].reverse().find(t => t.src === 'manual' && t.merch.toLowerCase() === m);
+  const src = prev || templates.find(t => t.merch.toLowerCase() === m);
+  if (!src) return;
+  const set = (id, v) => { const el = document.getElementById(id); if (el && [...el.options].some(o => o.value === v)) el.value = v; };
+  if (!document.getElementById('mAmt').value) document.getElementById('mAmt').value = src.amt;
+  set('mPayer', src.card); set('mCat', src.cat); if (src.bud) set('mBud', src.bud);
+}
+function renderTemplates() {
+  const el = document.getElementById('tplList'); if (!el) return;
+  if (!templates.length) { el.innerHTML = '<div style="font-size:12px;color:var(--tx3)">Inga mallar än. Lägg in en post manuellt ovan och klicka "Spara som mall", eller klicka "+ Ny mall".</div>'; return; }
+  el.innerHTML = templates.map(t => `
+    <div class="tplrow">
+      <input type="text" value="${esc(t.merch)}" placeholder="Namn, t.ex. Hyra" onchange="setTpl(${t.id},'merch',this.value)">
+      <input type="number" step="0.01" min="0" value="${t.amt}" onchange="setTpl(${t.id},'amt',this.value)" style="font-family:'DM Mono',monospace;">
+      <select onchange="setTpl(${t.id},'card',this.value)">${PAYERS.map(p => `<option${t.card === p ? ' selected' : ''}>${p}</option>`).join('')}</select>
+      <select onchange="setTpl(${t.id},'cat',this.value)">${DELNING.map(d => `<option value="${d.k}"${t.cat === d.k ? ' selected' : ''}>${d.l}</option>`).join('')}</select>
+      <select onchange="setTpl(${t.id},'bud',this.value)">${budOptionsHtml(t.bud)}</select>
+      <button class="btn btn-sm" onclick="applyTemplates(${t.id})">Lägg in</button>
+      <button class="del" onclick="removeTemplate(${t.id})"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+    </div>`).join('');
+}
+function setTpl(id, field, v) {
+  const t = templates.find(x => x.id === id); if (!t) return;
+  t[field] = field === 'amt' ? (parseFloat(v) || 0) : v;
+  persistStorage(); updateMerchList();
+}
+function addTemplate() {
+  templates.push({ id: Date.now(), merch: '', amt: 0, card: 'Oscar', cat: 'gemensam', bud: '' });
+  persistStorage(); renderTemplates();
+}
+function removeTemplate(id) { templates = templates.filter(t => t.id !== id); persistStorage(); renderTemplates(); updateMerchList(); }
+function saveAsTemplate() {
+  const merch = document.getElementById('mMerch').value.trim();
+  const amt = parseFloat(document.getElementById('mAmt').value) || 0;
+  if (!merch || !amt) { toast('Fyll i butik och belopp'); return; }
+  templates.push({ id: Date.now(), merch, amt, card: document.getElementById('mPayer').value, cat: document.getElementById('mCat').value, bud: document.getElementById('mBud').value || '' });
+  persistStorage(); renderTemplates(); updateMerchList(); toast('Mall sparad');
+}
+// Lägg in mallar för vald månad, en gång per mall och månad
+function applyTemplates(onlyId) {
+  const month = gm(), date = lastDayOfMonth(month);
+  let added = 0, existed = 0;
+  templates.filter(t => (onlyId === undefined || t.id === onlyId) && t.merch && t.amt > 0).forEach(t => {
+    if (TX.some(x => x.tpl === t.id && x.month === month)) { existed++; return; }
+    TX.push({ id: Date.now() + added, date, merch: t.merch, amt: t.amt, card: t.card, cat: t.cat, bud: t.bud || null, src: 'manual', month, note: '', tpl: t.id });
+    added++;
+  });
+  if (added) { renderList(); badge(); updateKatSub(); updateMerchList(); persistStorage(); }
+  toast(added ? `${added} ${added === 1 ? 'mall inlagd' : 'mallar inlagda'} i ${month}${existed ? ` (${existed} fanns redan)` : ''}`
+              : (existed ? 'Mallarna finns redan i den här månaden' : 'Inga mallar att lägga in'));
+}
+
+// ── ÖVERBLICK I SAMMANSTÄLLNINGEN ──
+function renderInsights(items, month) {
+  const d = new Date(month + '-01'); d.setMonth(d.getMonth() - 1);
+  const pm = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+  const prevItems = itemsOf(pm);
+  const sum = a => a.reduce((s, t) => s + amtOf(t), 0);
+  const byGroup = a => { const o = {}; a.forEach(t => { const g = t.bud ? budParent(t.bud) : '_none'; o[g] = (o[g] || 0) + amtOf(t); }); return o; };
+  const gInfo = k => k === '_none' ? { l: 'Utan budgetkategori', color: '#94a3b8' } : (BUD_GROUPS.find(g => g.k === k) || { l: k, color: '#94a3b8' });
+  const cur = byGroup(items), old = byGroup(prevItems);
+  const fmt = v => (v > 0 ? '+' : v < 0 ? '−' : '') + kr(Math.abs(v));
+  const dot = c => `<span style="width:8px;height:8px;border-radius:50%;background:${c};display:inline-block;flex-shrink:0"></span>`;
+  const row = (left, right) => `<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:7px 0;border-bottom:1px solid var(--bd);font-size:13px;"><span style="display:flex;align-items:center;gap:8px;min-width:0;">${left}</span><span style="font-family:'DM Mono',monospace;white-space:nowrap;">${right}</span></div>`;
+  const box = (title, body) => `<div class="cbox" style="margin-top:14px"><div class="slbl" style="margin-bottom:10px">${title}</div>${body}</div>`;
+  let html = '';
+
+  // Mot förra månaden
+  if (prevItems.length) {
+    const tot = sum(items), ptot = sum(prevItems), diff = tot - ptot;
+    const pct = ptot ? Math.round(Math.abs(diff) / ptot * 100) : 0;
+    const keys = [...new Set([...Object.keys(cur), ...Object.keys(old)])];
+    const changes = keys.map(k => ({ k, d: (cur[k] || 0) - (old[k] || 0) })).filter(x => Math.abs(x.d) >= 50)
+      .sort((a, b) => Math.abs(b.d) - Math.abs(a.d)).slice(0, 6);
+    const col = v => v > 0 ? '#ef4444' : 'var(--gem)';
+    html += box('Jämfört med förra månaden',
+      row('<strong>Totalt</strong>', `${kr(tot)} <span style="color:${col(diff)}">${fmt(diff)}${ptot ? ` (${pct} %)` : ''}</span>`) +
+      changes.map(c => { const g = gInfo(c.k); return row(dot(g.color) + esc(g.l), `<span style="color:var(--tx3)">${kr(old[c.k] || 0)} →</span> ${kr(cur[c.k] || 0)} <span style="color:${col(c.d)}">${fmt(c.d)}</span>`); }).join(''));
+  }
+
+  // Mot budget
+  const withBud = BUD_GROUPS.map(g => ({ g, spent: cur[g.k] || 0, bud: budgets[g.k] || 0 })).filter(x => x.bud > 0);
+  if (withBud.length) {
+    const over = withBud.filter(x => x.spent > x.bud).sort((a, b) => (b.spent - b.bud) - (a.spent - a.bud));
+    const near = withBud.filter(x => x.spent <= x.bud && x.spent >= x.bud * 0.85);
+    const line = (x, c) => row(dot(x.g.color) + esc(x.g.l), `${kr(x.spent)} av ${kr(x.bud)} <span style="color:${c}">${x.spent > x.bud ? '+' + kr(x.spent - x.bud) : Math.round(x.spent / x.bud * 100) + ' %'}</span>`);
+    html += box('Mot budget',
+      (over.length ? over.map(x => line(x, '#ef4444')).join('') : '<div style="font-size:13px;color:var(--gem);padding:4px 0;">Ingen kategori är över budget 🎉</div>') +
+      near.map(x => line(x, '#fbbf24')).join(''));
+  }
+
+  // Största butikerna
+  const shops = {};
+  items.forEach(t => {
+    const name = t.merch.replace(/[0-9*]+/g, ' ').trim().split(/\s+/).slice(0, 2).join(' ') || t.merch;
+    const k = name.toLowerCase();
+    (shops[k] = shops[k] || { name: name.charAt(0).toUpperCase() + name.slice(1).toLowerCase(), n: 0, s: 0 });
+    shops[k].n++; shops[k].s += amtOf(t);
+  });
+  const top = Object.values(shops).sort((a, b) => b.s - a.s).slice(0, 6);
+  if (top.length) html += box('Största butikerna', top.map(s => row(esc(s.name) + ` <span style="color:var(--tx3);font-size:11px;">${s.n} ${s.n === 1 ? 'köp' : 'köp'}</span>`, kr(s.s))).join(''));
+  return html;
+}
+
+// ── FILSYNK (delad datafil, t.ex. i en Google Drive-mapp) ──
+const FS_OK = typeof window.showOpenFilePicker === 'function';
+const SYNC_KEY = 'splitr_sync';
+const FILE_TYPES = [{ description: 'Splitr-data', accept: { 'application/json': ['.json'] } }];
+let fileHandle = null, syncState = 'off', lastSyncAt = null, pushTimer = null, syncBusy = false;
+
+function syncMeta() { try { return JSON.parse(localStorage.getItem(SYNC_KEY)) || {}; } catch (e) { return {}; } }
+function setSyncMeta(m) { try { localStorage.setItem(SYNC_KEY, JSON.stringify({ ...syncMeta(), ...m })); } catch (e) {} }
+
+// Filhandtaget sparas i IndexedDB så att filen kommer ihåg efter omstart
+function idb() { return new Promise((res, rej) => { const r = indexedDB.open('splitr_fs', 1); r.onupgradeneeded = () => r.result.createObjectStore('h'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
+async function idbSet(k, v) { const db = await idb(); return new Promise((res, rej) => { const tx = db.transaction('h', 'readwrite'); tx.objectStore('h').put(v, k); tx.oncomplete = res; tx.onerror = () => rej(tx.error); }); }
+async function idbGet(k) { const db = await idb(); return new Promise((res, rej) => { const r = db.transaction('h').objectStore('h').get(k); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
+async function idbDel(k) { const db = await idb(); return new Promise((res, rej) => { const tx = db.transaction('h', 'readwrite'); tx.objectStore('h').delete(k); tx.oncomplete = res; tx.onerror = () => rej(tx.error); }); }
+
+function refreshAll() {
+  badge(); updateKatSub(); renderList(); populateBudSelects(); renderBsetup(); updateLearnedPanel(); renderTemplates(); updateMerchList(); renderActive();
+}
+
+function renderSync() {
+  const el = document.getElementById('syncBox'); if (!el) return;
+  const btn = (label, fn) => `<button class="btn btn-sm" style="width:100%;justify-content:center;" onclick="${fn}">${label}</button>`;
+  if (!FS_OK) { el.innerHTML = '<div style="font-size:11px;color:var(--tx3)">Filsynk kräver Chrome eller Edge på dator.</div>'; return; }
+  if (!fileHandle) {
+    el.innerHTML = btn('Koppla datafil', 'connectFile(false)') + btn('Skapa ny datafil', 'connectFile(true)');
+    return;
+  }
+  const name = esc(fileHandle.name);
+  if (syncState === 'needperm') el.innerHTML = `<div class="sync-warn">Behöver ditt OK för att använda ${name}</div>` + btn('Återanslut', 'reconnectFile()') + btn('Koppla bort', 'disconnectFile()');
+  else if (syncState === 'error') el.innerHTML = `<div class="sync-warn">Kunde inte synka med ${name}</div>` + btn('Försök igen', 'syncNow()') + btn('Koppla bort', 'disconnectFile()');
+  else {
+    const t = lastSyncAt ? lastSyncAt.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' }) : '';
+    el.innerHTML = `<div class="sync-ok">✓ Synkad ${t} · ${name}</div>` + btn('Koppla bort', 'disconnectFile()');
+  }
+}
+
+function applyFile(data, mod) {
+  saved = data.saved || {}; TX = data.tx || []; budgets = data.budgets || {}; colMap = data.colMap || {};
+  learnedCats = data.learnedCats || {}; learnedOwner = data.learnedOwner || {}; templates = data.templates || [];
+  migrateData();
+  try { localStorage.setItem('splitr_data', buildPayload()); } catch (e) {}
+  const ts = Date.now();
+  setSyncMeta({ localTs: ts, syncedLocalTs: ts, fileMod: mod });
+  refreshAll();
+}
+
+async function writeFile() {
+  if (!fileHandle) return;
+  const ts = syncMeta().localTs || Date.now();
+  try {
+    const w = await fileHandle.createWritable();
+    await w.write(buildPayload()); await w.close();
+    const f = await fileHandle.getFile();
+    setSyncMeta({ fileMod: f.lastModified, syncedLocalTs: ts });
+    syncState = 'ok'; lastSyncAt = new Date();
+  } catch (e) { syncState = (e && e.name === 'NotAllowedError') ? 'needperm' : 'error'; }
+  renderSync();
+}
+
+async function connectFile(create) {
+  if (!FS_OK) return;
+  try {
+    const h = create
+      ? await window.showSaveFilePicker({ suggestedName: 'splitr-data.json', types: FILE_TYPES })
+      : (await window.showOpenFilePicker({ types: FILE_TYPES }))[0];
+    if (await h.requestPermission({ mode: 'readwrite' }) !== 'granted') { toast('Behörighet nekades'); return; }
+    const f = await h.getFile(); const txt = await f.text();
+    let data = null;
+    try { data = txt.trim() ? JSON.parse(txt) : null; } catch (e) { toast('Filen går inte att läsa som Splitr-data'); return; }
+    fileHandle = h; await idbSet('handle', h);
+    const fileHas = data && (Object.keys(data.saved || {}).length || (data.tx || []).length);
+    const localHas = TX.length || Object.keys(saved).length;
+    if (fileHas && (!localHas || confirm('Filen innehåller redan data.\n\nOK = ersätt det som finns i webbläsaren med filens data.\nAvbryt = skriv webbläsarens data till filen.'))) {
+      applyFile(data, f.lastModified); syncState = 'ok'; lastSyncAt = new Date(); renderSync(); toast('Data inläst från ' + h.name);
+    } else {
+      await writeFile(); toast('Kopplad till ' + h.name);
+    }
+  } catch (e) { if (!e || e.name !== 'AbortError') { toast('Kunde inte koppla filen'); } }
+}
+
+async function reconnectFile() {
+  try { if (await fileHandle.requestPermission({ mode: 'readwrite' }) === 'granted') { syncState = 'ok'; await syncNow(); } } catch (e) {}
+  renderSync();
+}
+async function disconnectFile() {
+  fileHandle = null; syncState = 'off';
+  try { await idbDel('handle'); } catch (e) {}
+  renderSync(); toast('Filsynk bortkopplad');
+}
+
+// Jämför filen och webbläsaren och synka åt rätt håll
+async function syncNow() {
+  if (!fileHandle || syncBusy) return;
+  const modal = document.getElementById('splitModal');
+  if (modal && modal.style.display === 'flex') return;
+  syncBusy = true;
+  try {
+    if (await fileHandle.queryPermission({ mode: 'readwrite' }) !== 'granted') { syncState = 'needperm'; return; }
+    const f = await fileHandle.getFile(); const m = syncMeta();
+    const fileChanged = f.lastModified !== m.fileMod;
+    const localChanged = (m.localTs || 0) > (m.syncedLocalTs || 0);
+    if (fileChanged) {
+      const txt = await f.text();
+      if (!txt.trim()) { await writeFile(); return; }
+      let useFile = true;
+      if (localChanged) useFile = confirm('Både du och datafilen har ändrats sedan senaste synk.\n\nOK = läs in filens version (dina senaste ändringar här försvinner).\nAvbryt = behåll dina ändringar och skriv över filen.');
+      if (useFile) {
+        applyFile(JSON.parse(txt), f.lastModified);
+        syncState = 'ok'; lastSyncAt = new Date(); toast('Läste in uppdaterad data från filen');
+        return;
+      }
+    }
+    if (fileChanged || localChanged) await writeFile();
+    else { syncState = 'ok'; lastSyncAt = lastSyncAt || new Date(); }
+  } catch (e) { syncState = 'error'; }
+  finally {
+    syncBusy = false; renderSync();
+    const m2 = syncMeta();
+    if (syncState === 'ok' && (m2.localTs || 0) > (m2.syncedLocalTs || 0)) schedulePush();
+  }
+}
+function schedulePush() { if (!fileHandle) return; clearTimeout(pushTimer); pushTimer = setTimeout(syncNow, 700); }
+
+async function initFile() {
+  renderSync();
+  if (!FS_OK) return;
+  try {
+    const h = await idbGet('handle');
+    if (h) {
+      fileHandle = h; syncState = 'needperm';
+      if (await h.queryPermission({ mode: 'readwrite' }) === 'granted') await syncNow();
+    }
+  } catch (e) {}
+  renderSync();
+  window.addEventListener('focus', () => syncNow());
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) syncNow(); });
+  setInterval(() => { if (!document.hidden) syncNow(); }, 20000);
+}
+
 // ── INIT ──
 document.getElementById('mDate').value = new Date().toISOString().slice(0,10);
 
@@ -1948,8 +2352,9 @@ const _prevMonth = new Date(_now.getFullYear(), _now.getMonth() - 1, 1);
 document.getElementById('monthPicker').value =
   `${_prevMonth.getFullYear()}-${String(_prevMonth.getMonth()+1).padStart(2,'0')}`;
 
+syncManualDate();
 loadColWidths();
-loadStorage();
+loadStorage().then(initFile);
 </script>
 </body>
 </html>

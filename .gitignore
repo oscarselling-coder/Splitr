@@ -1,0 +1,2 @@
+# Exporterad ekonomidata ska aldrig hamna på GitHub
+*.json
